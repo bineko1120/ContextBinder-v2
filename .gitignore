@@ -1,0 +1,12 @@
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.rsuser
+*.userosscache
+*.sln.docstates
+*.nupkg
+*.log
+ContextBinder_Data/
+contextbinder.storage.json
