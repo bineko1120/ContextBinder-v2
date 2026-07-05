@@ -7,5 +7,11 @@
     <Nullable>enable</Nullable>
     <AssemblyName>ContextBinder</AssemblyName>
     <RootNamespace>ContextBinder</RootNamespace>
+    <ApplicationIcon>Assets\Icons\icon_app.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="Assets\Icons\*.png" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="Assets\Icons\*.ico" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

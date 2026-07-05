@@ -11,6 +11,7 @@ public sealed class MainForm : Form
     private readonly BackupService _backupService = new();
     private readonly SearchService _searchService = new();
     private readonly TrashService _trashService = new();
+    private readonly IconAssetService _iconAssetService = new();
     private readonly StoreService _storeService;
     private readonly ItemActionService _itemActionService;
     private readonly DragDropService _dragDropService;
@@ -40,6 +41,7 @@ public sealed class MainForm : Form
         StartPosition = FormStartPosition.CenterScreen;
         Font = SystemFonts.MessageBoxFont;
         AllowDrop = true;
+        Icon = _iconAssetService.GetAppIcon();
 
         BuildLayout();
         BuildContextMenu();
@@ -61,6 +63,7 @@ public sealed class MainForm : Form
 
         _notifyIcon.Visible = false;
         _notifyIcon.Dispose();
+        _iconAssetService.Dispose();
         _trayMenu.Dispose();
         _itemContextMenu.Dispose();
         base.OnFormClosing(e);
@@ -106,6 +109,7 @@ public sealed class MainForm : Form
         _itemGrid.BorderStyle = BorderStyle.FixedSingle;
         _itemGrid.MultiSelect = false;
         _itemGrid.ReadOnly = true;
+        _itemGrid.RowTemplate.Height = 36;
         _itemGrid.RowHeadersVisible = false;
         _itemGrid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
         _itemGrid.ContextMenuStrip = _itemContextMenu;
@@ -195,7 +199,7 @@ public sealed class MainForm : Form
         _trayMenu.Items.Add("開く", null, (_, _) => ShowFromTray());
         _trayMenu.Items.Add("終了", null, (_, _) => ExitApplication());
 
-        _notifyIcon.Icon = SystemIcons.Application;
+        _notifyIcon.Icon = _iconAssetService.GetTrayIcon();
         _notifyIcon.Text = "ContextBinder v2";
         _notifyIcon.ContextMenuStrip = _trayMenu;
         _notifyIcon.Visible = true;
@@ -264,6 +268,7 @@ public sealed class MainForm : Form
 
         _itemGrid.DataSource = items.Select(item => new ItemGridRow(
             item.Id,
+            _iconAssetService.GetItemIcon(item.Type),
             _fileTypeDetector.GetDisplayName(item.Type),
             item.Title,
             item.Type == BinderItemType.Template ? CreateTemplatePreview(item.TemplateText) : item.PathOrUrl,
@@ -272,6 +277,14 @@ public sealed class MainForm : Form
         if (_itemGrid.Columns[nameof(ItemGridRow.ItemId)] is DataGridViewColumn idColumn)
         {
             idColumn.Visible = false;
+        }
+
+        if (_itemGrid.Columns[nameof(ItemGridRow.Icon)] is DataGridViewImageColumn iconColumn)
+        {
+            iconColumn.HeaderText = "";
+            iconColumn.Width = 42;
+            iconColumn.FillWeight = 8;
+            iconColumn.ImageLayout = DataGridViewImageCellLayout.Zoom;
         }
 
         if (_itemGrid.Columns[nameof(ItemGridRow.Type)] is DataGridViewColumn typeColumn)
@@ -746,6 +759,7 @@ public sealed class MainForm : Form
 
     private sealed record ItemGridRow(
         string ItemId,
+        Image Icon,
         string Type,
         string Title,
         string Reference,

@@ -25,6 +25,7 @@ dotnet run --project .\tests\ContextBinder.Tests\ContextBinder.Tests.csproj
 - 同一グループ内の参照先重複チェック
 - 登録内容と設定のJSON保存、起動時読み込み
 - 右クリックメニューとタスクトレイ常駐の骨組み
+- 同梱猫アイコンによる種類表示
 
 ## 登録内容と設定について
 
@@ -37,4 +38,4 @@ dotnet run --project .\tests\ContextBinder.Tests\ContextBinder.Tests.csproj
 
 このリポジトリはMVPの土台です。D&D、設定画面、詳細画面、バックアップ、ごみ箱、インポート・エクスポートなどは段階的に実装します。
 
-猫アイコンなどの素材は未同梱です。アイコンが無い状態でもビルドできるよう、現時点ではWindows標準アイコンまたはテキスト表示を使います。
+同梱アイコン・画像素材の無断転載、再配布、素材としての流用を禁止します。

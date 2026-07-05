@@ -62,7 +62,7 @@ public sealed class FileTypeDetector
     {
         return type switch
         {
-            BinderItemType.Folder => "フォルダー",
+            BinderItemType.Folder => "フォルダ",
             BinderItemType.File => "ファイル",
             BinderItemType.Image => "画像",
             BinderItemType.Video => "動画",
