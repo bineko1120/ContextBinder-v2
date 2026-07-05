@@ -1,0 +1,45 @@
+## Summary
+
+- Create initial C# WinForms project for ContextBinder v2
+- Add `docs/ContextBinder_v2_SPEC.md` without modification
+- Implement MVP model and service skeletons
+- Add MainForm initial UI
+  - group list
+  - DataGridView item list
+  - operation buttons
+  - status / description area
+- Implement basic features
+  - add group
+  - add file / folder / URL / template
+  - JSON save/load
+  - duplicate check within the same group
+  - context menu skeleton
+  - tray icon skeleton
+- Add cat icon assets
+  - app icon
+  - tray icon
+  - folder / file / image / video / URL / template icons
+- Replace icon assets with transparent versions
+
+## Verification
+
+- `dotnet build .\ContextBinder_v2.sln`
+- Smoke test passed
+- Application startup confirmed
+- Warning: 0
+- Error: 0
+
+## Notes
+
+This PR implements the initial MVP foundation only.
+The following are intentionally not implemented yet:
+
+- first-run setup
+- storage location selection
+- settings screen
+- detail form
+- full drag-and-drop behavior
+- search/filter UI
+- trash / undo
+- import/export
+- BOOTH publish / ZIP creation
