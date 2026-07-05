@@ -9,35 +9,37 @@ public sealed class StoreService
     {
         WriteIndented = true,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+        Converters =
+        {
+            new StorageModeJsonConverter(),
+            new System.Text.Json.Serialization.JsonStringEnumConverter()
+        }
     };
 
-    private readonly StorageLocationService _storageLocationService;
     private readonly BackupService _backupService;
 
-    public StoreService(StorageLocationService storageLocationService, BackupService backupService)
+    public StoreService(StorageLocation location, BackupService backupService)
     {
-        _storageLocationService = storageLocationService;
+        Location = location;
         _backupService = backupService;
-        Paths = _storageLocationService.ResolveStoragePaths();
     }
 
-    public StoragePaths Paths { get; private set; }
+    public StorageLocation Location { get; }
 
     public AppSettings LoadSettings()
     {
         EnsureDataDirectories();
 
-        if (!File.Exists(Paths.SettingsFilePath))
+        if (!File.Exists(Location.SettingsFilePath))
         {
-            return new AppSettings();
+            return CreateDefaultSettings();
         }
 
         try
         {
-            string json = File.ReadAllText(Paths.SettingsFilePath);
-            AppSettings settings = JsonSerializer.Deserialize<AppSettings>(json, JsonOptions) ?? new AppSettings();
-            UseSettings(settings);
+            string json = File.ReadAllText(Location.SettingsFilePath);
+            AppSettings settings = JsonSerializer.Deserialize<AppSettings>(json, JsonOptions) ?? CreateDefaultSettings();
+            ApplyLocationDefaults(settings);
             return settings;
         }
         catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
@@ -48,23 +50,23 @@ public sealed class StoreService
 
     public void SaveSettings(AppSettings settings)
     {
-        UseSettings(settings);
+        ApplyLocationDefaults(settings);
         EnsureDataDirectories();
-        WriteJsonAtomically(Paths.SettingsFilePath, settings);
+        WriteJsonAtomically(Location.SettingsFilePath, settings);
     }
 
     public ContextBinderStore LoadStore()
     {
         EnsureDataDirectories();
 
-        if (!File.Exists(Paths.StoreFilePath))
+        if (!File.Exists(Location.StoreFilePath))
         {
             return new ContextBinderStore();
         }
 
         try
         {
-            string json = File.ReadAllText(Paths.StoreFilePath);
+            string json = File.ReadAllText(Location.StoreFilePath);
             ContextBinderStore store = JsonSerializer.Deserialize<ContextBinderStore>(json, JsonOptions) ?? new ContextBinderStore();
             NormalizeStore(store);
             return store;
@@ -82,11 +84,11 @@ public sealed class StoreService
 
         if (settings.AutoBackupEnabled)
         {
-            _backupService.CreateBackupIfExists(Paths.StoreFilePath, Paths.BackupDirectory);
-            _backupService.PruneBackups(Paths.BackupDirectory, settings.MaxBackupCount);
+            _backupService.CreateBackupIfExists(Location.StoreFilePath, Location.BackupDirectory);
+            _backupService.PruneBackups(Location.BackupDirectory, settings.MaxBackupCount);
         }
 
-        WriteJsonAtomically(Paths.StoreFilePath, store);
+        WriteJsonAtomically(Location.StoreFilePath, store);
     }
 
     public bool HasDuplicateReference(BinderGroup group, BinderItem item, string? exceptItemId = null)
@@ -102,16 +104,24 @@ public sealed class StoreService
             && string.Equals(NormalizeReference(existing), referenceKey, StringComparison.OrdinalIgnoreCase));
     }
 
-    private void UseSettings(AppSettings settings)
+    private AppSettings CreateDefaultSettings()
     {
-        Paths = _storageLocationService.ResolveStoragePaths(settings);
+        AppSettings settings = new();
+        ApplyLocationDefaults(settings);
+        return settings;
+    }
+
+    private void ApplyLocationDefaults(AppSettings settings)
+    {
+        settings.StorageMode = Location.Mode;
+        settings.CustomStorageDirectory = Location.Mode == StorageMode.Custom ? Location.DataDirectory : string.Empty;
     }
 
     private void EnsureDataDirectories()
     {
-        Directory.CreateDirectory(Paths.DataDirectory);
-        Directory.CreateDirectory(Paths.BackupDirectory);
-        Directory.CreateDirectory(Paths.TrashDirectory);
+        Directory.CreateDirectory(Location.DataDirectory);
+        Directory.CreateDirectory(Location.BackupDirectory);
+        Directory.CreateDirectory(Location.TrashDirectory);
     }
 
     private static void NormalizeStore(ContextBinderStore store)

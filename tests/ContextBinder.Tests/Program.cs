@@ -7,19 +7,64 @@ try
 {
     Directory.CreateDirectory(testRoot);
 
-    AppSettings settings = new()
-    {
-        StorageMode = StorageMode.CustomFolder,
-        CustomStorageDirectory = testRoot,
-        AutoBackupEnabled = false
-    };
+    string standardRoot = Path.Combine(testRoot, "standard");
+    string appRoot = Path.Combine(testRoot, "app");
+    string portableAppRoot = Path.Combine(testRoot, "portable-app");
+    string customAppRoot = Path.Combine(testRoot, "custom-app");
+    string customRoot = Path.Combine(testRoot, "custom");
+    Directory.CreateDirectory(appRoot);
+    Directory.CreateDirectory(portableAppRoot);
+    Directory.CreateDirectory(customAppRoot);
 
-    StoreService storeService = new(new StorageLocationService([]), new BackupService());
     FileTypeDetector detector = new();
 
     string imagePath = Path.Combine(testRoot, "sample.png");
     File.WriteAllText(imagePath, "not a real image");
     Assert(detector.DetectFromPath(imagePath) == BinderItemType.Image, "画像拡張子が Image と判定されること");
+
+    StorageLocationService standardLocationService = new([], appRoot, standardRoot);
+    Assert(standardLocationService.ResolveExistingLocation() is null, "未設定時は初回セットアップが必要になること");
+
+    StorageLocation standardLocation = standardLocationService.InitializeFirstRun(StorageMode.Standard);
+    Assert(standardLocation.Mode == StorageMode.Standard, "標準モードで保存先解決できること");
+    Assert(standardLocation.DataDirectory == Path.GetFullPath(standardRoot), "標準モードの保存先が指定AppData相当になること");
+    AssertRequiredDirectoriesExist(standardLocation);
+
+    AppSettings settings = standardLocationService.CreateInitialSettings(standardLocation);
+    settings.AutoBackupEnabled = false;
+    StoreService standardStoreService = new(standardLocation, new BackupService());
+    standardStoreService.SaveSettings(settings);
+
+    StorageLocation? resolvedStandardLocation = standardLocationService.ResolveExistingLocation();
+    Assert(resolvedStandardLocation?.Mode == StorageMode.Standard, "標準設定がある場合は標準モードで起動すること");
+
+    string unusedPortableStandardRoot = Path.Combine(testRoot, "unused-standard-portable");
+    StorageLocationService portableLocationService = new([], portableAppRoot, unusedPortableStandardRoot);
+    StorageLocation portableLocation = portableLocationService.InitializeFirstRun(StorageMode.Portable);
+    Assert(portableLocation.Mode == StorageMode.Portable, "ポータブルモードで保存先解決できること");
+    Assert(portableLocation.DataDirectory == Path.Combine(Path.GetFullPath(portableAppRoot), StorageLocationService.DataDirectoryName), "ポータブルモードの保存先がアプリフォルダ内になること");
+    Assert(File.Exists(Path.Combine(portableAppRoot, StorageLocationService.PortableFlagFileName)), "portable.flag が作成されること");
+    AssertRequiredDirectoriesExist(portableLocation);
+    Assert(portableLocationService.ResolveExistingLocation()?.Mode == StorageMode.Portable, "portable.flag からポータブルモードを読み込めること");
+    Assert(!Directory.Exists(unusedPortableStandardRoot), "ポータブルモードでは標準保存先相当のフォルダを作成しないこと");
+
+    string unusedCustomStandardRoot = Path.Combine(testRoot, "unused-standard-custom");
+    StorageLocationService customLocationService = new([], customAppRoot, unusedCustomStandardRoot);
+    StorageLocation customLocation = customLocationService.InitializeFirstRun(StorageMode.Custom, customRoot);
+    Assert(customLocation.Mode == StorageMode.Custom, "カスタムモードで保存先解決できること");
+    Assert(customLocation.DataDirectory == Path.GetFullPath(customRoot), "カスタムモードの保存先が指定フォルダになること");
+    Assert(File.Exists(Path.Combine(customAppRoot, StorageLocationService.StorageMarkerFileName)), "contextbinder.storage.json が作成されること");
+    AssertRequiredDirectoriesExist(customLocation);
+
+    StorageLocation? resolvedCustomLocation = customLocationService.ResolveExistingLocation();
+    Assert(resolvedCustomLocation?.Mode == StorageMode.Custom, "contextbinder.storage.json からカスタムモードを読み込めること");
+    if (resolvedCustomLocation is null)
+    {
+        throw new InvalidOperationException("テスト失敗: contextbinder.storage.json から保存場所を読み込めること");
+    }
+
+    Assert(resolvedCustomLocation.DataDirectory == customLocation.DataDirectory, "contextbinder.storage.json から保存先フォルダを復元できること");
+    Assert(!Directory.Exists(unusedCustomStandardRoot), "カスタムモードでは標準保存先相当のフォルダを作成しないこと");
 
     BinderGroup group = new()
     {
@@ -51,8 +96,11 @@ try
         Groups = [group]
     };
 
-    storeService.SaveSettings(settings);
-    storeService.SaveStore(store, settings);
+    StoreService storeService = new(customLocation, new BackupService());
+    AppSettings customSettings = customLocationService.CreateInitialSettings(customLocation);
+    customSettings.AutoBackupEnabled = false;
+    storeService.SaveSettings(customSettings);
+    storeService.SaveStore(store, customSettings);
 
     ContextBinderStore loadedStore = storeService.LoadStore();
     Assert(loadedStore.Groups.Count == 1, "グループが保存・読み込みされること");
@@ -93,4 +141,11 @@ static void Assert(bool condition, string message)
     {
         throw new InvalidOperationException($"テスト失敗: {message}");
     }
+}
+
+static void AssertRequiredDirectoriesExist(StorageLocation location)
+{
+    Assert(Directory.Exists(location.DataDirectory), "登録内容と設定フォルダが作成されること");
+    Assert(Directory.Exists(location.BackupDirectory), "backups フォルダが作成されること");
+    Assert(Directory.Exists(location.TrashDirectory), "trash フォルダが作成されること");
 }

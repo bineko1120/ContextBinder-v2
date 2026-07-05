@@ -8,7 +8,6 @@ public sealed class MainForm : Form
 {
     private readonly FileTypeDetector _fileTypeDetector = new();
     private readonly ClipboardService _clipboardService = new();
-    private readonly BackupService _backupService = new();
     private readonly SearchService _searchService = new();
     private readonly TrashService _trashService = new();
     private readonly IconAssetService _iconAssetService = new();
@@ -29,9 +28,9 @@ public sealed class MainForm : Form
     private AppSettings _settings = new();
     private bool _allowExit;
 
-    public MainForm(string[] args)
+    public MainForm(StoreService storeService)
     {
-        _storeService = new StoreService(new StorageLocationService(args), _backupService);
+        _storeService = storeService;
         _itemActionService = new ItemActionService(_clipboardService);
         _dragDropService = new DragDropService(_fileTypeDetector);
 
@@ -224,7 +223,7 @@ public sealed class MainForm : Form
             _settings = _storeService.LoadSettings();
             _store = _storeService.LoadStore();
             RefreshGroupList();
-            SetStatus($"登録内容と設定を読み込みました。保存先: {_storeService.Paths.DataDirectory}");
+            SetStatus($"登録内容と設定を読み込みました。保存先: {_storeService.Location.DataDirectory}");
         }
         catch (InvalidOperationException ex)
         {

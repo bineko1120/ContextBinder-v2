@@ -4,7 +4,9 @@ public sealed class AppSettings
 {
     public int SchemaVersion { get; set; } = 1;
 
-    public StorageMode StorageMode { get; set; } = StorageMode.AppData;
+    public bool FirstRunCompleted { get; set; }
+
+    public StorageMode StorageMode { get; set; } = StorageMode.Standard;
 
     public string CustomStorageDirectory { get; set; } = string.Empty;
 
