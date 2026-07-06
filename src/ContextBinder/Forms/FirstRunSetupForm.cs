@@ -1,178 +1,608 @@
 using ContextBinder.Models;
+using ContextBinder.Services;
 
 namespace ContextBinder.Forms;
 
 public sealed class FirstRunSetupForm : Form
 {
+    private const int ContentWidth = 760;
+    private const int LastStepIndex = 3;
+
+    private readonly StorageLocationService _storageLocationService;
+    private readonly Label _stepLabel = new();
+    private readonly Panel _contentPanel = new();
+    private readonly Button _backButton = new();
+    private readonly Button _nextButton = new();
+    private readonly Button _cancelButton = new();
+
     private readonly RadioButton _recommendedSetupRadio = new();
     private readonly RadioButton _customSetupRadio = new();
-    private readonly GroupBox _storageGroup = new();
     private readonly RadioButton _standardStorageRadio = new();
     private readonly RadioButton _portableStorageRadio = new();
     private readonly RadioButton _customStorageRadio = new();
     private readonly TextBox _customDirectoryTextBox = new();
     private readonly Button _browseButton = new();
+    private readonly Label _storageDescriptionLabel = new();
+    private readonly Label _storagePreviewLabel = new();
 
-    public FirstRunSetupForm()
+    private readonly CheckBox _editRecommendedSettingsCheckBox = new();
+    private readonly ComboBox _typeDisplayModeComboBox = new();
+    private readonly CheckBox _showBeginnerHintsCheckBox = new();
+    private readonly CheckBox _showIconLegendCheckBox = new();
+    private readonly CheckBox _showOperationStatusCheckBox = new();
+    private readonly CheckBox _confirmTitleOnDropAddCheckBox = new();
+    private readonly CheckBox _focusExistingItemOnDuplicateCheckBox = new();
+    private readonly CheckBox _enableGroupDropModifierShortcutsCheckBox = new();
+    private readonly CheckBox _confirmGroupDropCopyMoveCheckBox = new();
+    private readonly CheckBox _enableItemDragReorderCheckBox = new();
+    private readonly CheckBox _enableExternalFileDropOutCheckBox = new();
+    private readonly CheckBox _enableExternalUrlTextDragOutCheckBox = new();
+    private readonly CheckBox _enableExternalTemplateTextDragOutCheckBox = new();
+    private readonly CheckBox _minimizeToTrayOnCloseCheckBox = new();
+    private readonly CheckBox _enableContextMenuDetailsCheckBox = new();
+    private readonly CheckBox _autoBackupEnabledCheckBox = new();
+    private readonly NumericUpDown _maxBackupCountNumeric = new();
+    private readonly CheckBox _confirmBeforeDeleteCheckBox = new();
+    private readonly CheckBox _moveDeletedItemsToTrashCheckBox = new();
+    private readonly CheckBox _searchTemplateBodyCheckBox = new();
+
+    private readonly List<Control> _editableSettingsControls = [];
+    private int _currentStep;
+
+    public FirstRunSetupForm(StorageLocationService? storageLocationService = null)
     {
+        _storageLocationService = storageLocationService ?? new StorageLocationService();
+
         Text = "ContextBinder 初回セットアップ";
         StartPosition = FormStartPosition.CenterScreen;
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
         MinimizeBox = false;
-        ClientSize = new Size(680, 620);
+        ClientSize = new Size(840, 720);
         Font = SystemFonts.MessageBoxFont;
 
+        InitializeSetupControls();
+        InitializeStorageControls();
+        InitializeSettingsControls();
         BuildLayout();
-        UpdateStorageControls();
+        RenderCurrentStep();
     }
 
     public StorageMode SelectedStorageMode { get; private set; } = StorageMode.Standard;
 
     public string CustomStorageDirectory { get; private set; } = string.Empty;
 
+    public AppSettings SelectedAppSettings { get; private set; } = AppSettingsFactory.CreateRecommended();
+
+    private void InitializeSetupControls()
+    {
+        _recommendedSetupRadio.Text = "初心者おすすめ設定で始める";
+        _recommendedSetupRadio.Checked = true;
+        _recommendedSetupRadio.CheckedChanged += (_, _) => RenderCurrentStep();
+
+        _customSetupRadio.Text = "カスタム設定を選ぶ";
+        _customSetupRadio.CheckedChanged += (_, _) => RenderCurrentStep();
+    }
+
+    private void InitializeStorageControls()
+    {
+        _standardStorageRadio.Text = "通常の場所に保存（おすすめ）";
+        _standardStorageRadio.Checked = true;
+        _standardStorageRadio.CheckedChanged += (_, _) => UpdateStoragePreview();
+
+        _portableStorageRadio.Text = "このアプリのフォルダに保存";
+        _portableStorageRadio.CheckedChanged += (_, _) => UpdateStoragePreview();
+
+        _customStorageRadio.Text = "自分で選んだ場所に保存";
+        _customStorageRadio.CheckedChanged += (_, _) => UpdateStoragePreview();
+
+        _customDirectoryTextBox.Width = 560;
+        _customDirectoryTextBox.TextChanged += (_, _) => UpdateStoragePreview();
+
+        _browseButton.Text = "参照...";
+        _browseButton.Width = 92;
+        _browseButton.Click += BrowseButton_Click;
+    }
+
+    private void InitializeSettingsControls()
+    {
+        _typeDisplayModeComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
+        _typeDisplayModeComboBox.Width = 180;
+        _typeDisplayModeComboBox.Items.AddRange([
+            "アイコン＋文字",
+            "アイコンのみ",
+            "文字のみ",
+            "非表示（非推奨）"
+        ]);
+
+        _maxBackupCountNumeric.Minimum = 1;
+        _maxBackupCountNumeric.Maximum = 100;
+        _maxBackupCountNumeric.Width = 80;
+
+        LoadSettingsIntoControls(AppSettingsFactory.CreateRecommended());
+        _editRecommendedSettingsCheckBox.Text = "おすすめ設定を少し変更する";
+        _editRecommendedSettingsCheckBox.CheckedChanged += (_, _) => UpdateSettingsEditability();
+
+        RegisterSettingControl(_typeDisplayModeComboBox);
+        RegisterSettingControl(_showBeginnerHintsCheckBox, "初心者向け説明を表示");
+        RegisterSettingControl(_showIconLegendCheckBox, "アイコン凡例を表示");
+        RegisterSettingControl(_showOperationStatusCheckBox, "操作結果ステータスを表示");
+        RegisterSettingControl(_confirmTitleOnDropAddCheckBox, "D&D追加時にタイトルを確認");
+        RegisterSettingControl(_focusExistingItemOnDuplicateCheckBox, "重複時に既存項目へジャンプ");
+        RegisterSettingControl(_enableGroupDropModifierShortcutsCheckBox, "Ctrl/Shiftドロップショートカット");
+        RegisterSettingControl(_confirmGroupDropCopyMoveCheckBox, "通常グループドロップ時に確認");
+        RegisterSettingControl(_enableItemDragReorderCheckBox, "項目のD&D並び替え");
+        RegisterSettingControl(_enableExternalFileDropOutCheckBox, "ファイル/画像/動画/フォルダを外部D&Dで渡す");
+        RegisterSettingControl(_enableExternalUrlTextDragOutCheckBox, "URLを外部D&Dでテキストとして渡す");
+        RegisterSettingControl(_enableExternalTemplateTextDragOutCheckBox, "テンプレート本文を外部D&Dで渡す");
+        RegisterSettingControl(_minimizeToTrayOnCloseCheckBox, "閉じるボタンでタスクトレイに格納");
+        RegisterSettingControl(_enableContextMenuDetailsCheckBox, "右クリック詳細操作を有効にする");
+        RegisterSettingControl(_autoBackupEnabledCheckBox, "自動バックアップ");
+        RegisterSettingControl(_maxBackupCountNumeric);
+        RegisterSettingControl(_confirmBeforeDeleteCheckBox, "削除前に確認");
+        RegisterSettingControl(_moveDeletedItemsToTrashCheckBox, "削除時にアプリ内ごみ箱へ移動");
+        RegisterSettingControl(_searchTemplateBodyCheckBox, "テンプレート本文も検索対象にする");
+    }
+
+    private void RegisterSettingControl(Control control)
+    {
+        _editableSettingsControls.Add(control);
+    }
+
+    private void RegisterSettingControl(CheckBox checkBox, string text)
+    {
+        checkBox.Text = text;
+        checkBox.Width = ContentWidth - 40;
+        _editableSettingsControls.Add(checkBox);
+    }
+
     private void BuildLayout()
     {
         TableLayoutPanel root = new()
         {
             Dock = DockStyle.Fill,
-            Padding = new Padding(18),
+            Padding = new Padding(16),
             ColumnCount = 1,
-            RowCount = 5
+            RowCount = 3
         };
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 74));
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 96));
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 188));
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
         root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 46));
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
 
-        Label leadLabel = new()
+        _stepLabel.Dock = DockStyle.Fill;
+        _stepLabel.TextAlign = ContentAlignment.MiddleLeft;
+        _stepLabel.Font = new Font(Font, FontStyle.Bold);
+
+        _contentPanel.Dock = DockStyle.Fill;
+        _contentPanel.BorderStyle = BorderStyle.FixedSingle;
+        _contentPanel.Padding = new Padding(14);
+
+        TableLayoutPanel buttonPanel = new()
         {
             Dock = DockStyle.Fill,
-            Text = "ContextBinder へようこそ。\n登録内容と設定をどこに保存するかを選んでください。",
-            TextAlign = ContentAlignment.MiddleLeft
+            ColumnCount = 4
         };
+        buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 96));
+        buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 96));
+        buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 96));
 
-        GroupBox setupGroup = new()
-        {
-            Dock = DockStyle.Fill,
-            Text = "始め方"
-        };
-        _recommendedSetupRadio.Text = "初心者おすすめ設定で始める";
-        _recommendedSetupRadio.Location = new Point(16, 28);
-        _recommendedSetupRadio.Width = 300;
-        _recommendedSetupRadio.Checked = true;
-        _recommendedSetupRadio.CheckedChanged += (_, _) => UpdateStorageControls();
+        _backButton.Text = "戻る";
+        _backButton.Dock = DockStyle.Fill;
+        _backButton.Click += (_, _) => MoveStep(-1);
 
-        // TODO: 表示設定や操作設定の詳細選択は、設定画面実装フェーズで追加する。
-        _customSetupRadio.Text = "保存場所を自分で選んで始める";
-        _customSetupRadio.Location = new Point(16, 58);
-        _customSetupRadio.Width = 300;
-        _customSetupRadio.CheckedChanged += (_, _) => UpdateStorageControls();
-        setupGroup.Controls.AddRange([_recommendedSetupRadio, _customSetupRadio]);
+        _nextButton.Dock = DockStyle.Fill;
+        _nextButton.Click += NextButton_Click;
 
-        _storageGroup.Dock = DockStyle.Fill;
-        _storageGroup.Text = "登録内容と設定の保存場所";
+        _cancelButton.Text = "キャンセル";
+        _cancelButton.Dock = DockStyle.Fill;
+        _cancelButton.DialogResult = DialogResult.Cancel;
 
-        _standardStorageRadio.Text = "通常の場所に保存（おすすめ）";
-        _standardStorageRadio.Location = new Point(16, 30);
-        _standardStorageRadio.Width = 420;
-        _standardStorageRadio.Checked = true;
+        buttonPanel.Controls.Add(_backButton, 1, 0);
+        buttonPanel.Controls.Add(_nextButton, 2, 0);
+        buttonPanel.Controls.Add(_cancelButton, 3, 0);
 
-        _portableStorageRadio.Text = "このアプリのフォルダに保存";
-        _portableStorageRadio.Location = new Point(16, 64);
-        _portableStorageRadio.Width = 420;
-
-        _customStorageRadio.Text = "自分で選んだ場所に保存";
-        _customStorageRadio.Location = new Point(16, 98);
-        _customStorageRadio.Width = 420;
-        _customStorageRadio.CheckedChanged += (_, _) => UpdateStorageControls();
-
-        _customDirectoryTextBox.Location = new Point(36, 132);
-        _customDirectoryTextBox.Width = 500;
-
-        _browseButton.Text = "参照...";
-        _browseButton.Location = new Point(546, 130);
-        _browseButton.Width = 88;
-        _browseButton.Click += BrowseButton_Click;
-
-        _storageGroup.Controls.AddRange([
-            _standardStorageRadio,
-            _portableStorageRadio,
-            _customStorageRadio,
-            _customDirectoryTextBox,
-            _browseButton
-        ]);
-
-        TextBox explanationTextBox = new()
-        {
-            Dock = DockStyle.Fill,
-            Multiline = true,
-            ReadOnly = true,
-            ScrollBars = ScrollBars.Vertical,
-            Text = """
-保存されるもの:
-・登録したファイル、フォルダ、URLの参照先
-・登録したテンプレート文
-・グループ名と並び順
-・表示設定や操作設定
-・自動バックアップ
-・ごみ箱、削除履歴
-
-保存されないもの:
-・登録元のファイルそのもの
-・登録元の画像や動画そのもの
-・登録元のフォルダの中身
-"""
-        };
-
-        FlowLayoutPanel buttonPanel = new()
-        {
-            Dock = DockStyle.Fill,
-            FlowDirection = FlowDirection.RightToLeft
-        };
-
-        Button startButton = new()
-        {
-            Text = "開始",
-            Width = 88,
-            DialogResult = DialogResult.OK
-        };
-        startButton.Click += StartButton_Click;
-
-        Button cancelButton = new()
-        {
-            Text = "キャンセル",
-            Width = 88,
-            DialogResult = DialogResult.Cancel
-        };
-
-        buttonPanel.Controls.AddRange([cancelButton, startButton]);
-
-        root.Controls.Add(leadLabel, 0, 0);
-        root.Controls.Add(setupGroup, 0, 1);
-        root.Controls.Add(_storageGroup, 0, 2);
-        root.Controls.Add(explanationTextBox, 0, 3);
-        root.Controls.Add(buttonPanel, 0, 4);
+        root.Controls.Add(_stepLabel, 0, 0);
+        root.Controls.Add(_contentPanel, 0, 1);
+        root.Controls.Add(buttonPanel, 0, 2);
         Controls.Add(root);
 
-        AcceptButton = startButton;
-        CancelButton = cancelButton;
+        AcceptButton = _nextButton;
+        CancelButton = _cancelButton;
     }
 
-    private void UpdateStorageControls()
+    private void RenderCurrentStep()
     {
+        _contentPanel.Controls.Clear();
+        _stepLabel.Text = CreateStepText();
+        _backButton.Enabled = _currentStep > 0;
+        _nextButton.Text = _currentStep == LastStepIndex ? "開始" : "次へ";
+
+        Control page = _currentStep switch
+        {
+            0 => BuildStartModePage(),
+            1 => BuildStoragePage(),
+            2 => BuildSettingsPage(),
+            _ => BuildConfirmationPage()
+        };
+
+        page.Dock = DockStyle.Fill;
+        _contentPanel.Controls.Add(page);
+    }
+
+    private string CreateStepText()
+    {
+        string[] steps = [
+            "1. 始め方",
+            "2. 保存場所",
+            "3. 使いやすさ設定",
+            "4. 確認"
+        ];
+
+        return string.Join("  →  ", steps.Select((step, index) => index == _currentStep ? $"【{step}】" : step));
+    }
+
+    private Control BuildStartModePage()
+    {
+        FlowLayoutPanel panel = CreateVerticalPanel();
+        panel.Controls.Add(CreateHeading("ContextBinderへようこそ"));
+        panel.Controls.Add(CreateParagraph("""
+このツールは、ファイル・フォルダ・URL・テンプレート文を
+グループごとにまとめて、すぐ開く/コピーできるツールです。
+
+まずは保存場所と使いやすさ設定を選びます。
+"""));
+        panel.Controls.Add(CreateOptionPanel(
+            _recommendedSetupRadio,
+            """
+迷った場合はこちらを選んでください。
+見やすさと安全性を優先した設定で始めます。
+次の画面で保存場所を選べます。
+おすすめ設定の内容は後で確認できます。
+""",
+            118));
+        panel.Controls.Add(CreateOptionPanel(
+            _customSetupRadio,
+            """
+表示、ドラッグ＆ドロップ、削除確認、バックアップなどを自分で選びます。
+ある程度使い方を決めたい人向けです。
+保存場所も次の画面で選べます。
+""",
+            100));
+
+        return panel;
+    }
+
+    private Control BuildStoragePage()
+    {
+        FlowLayoutPanel panel = CreateVerticalPanel();
+        panel.Controls.Add(CreateHeading("登録内容と設定の保存場所を選んでください"));
+        panel.Controls.Add(CreateStorageOptionPanel(
+            _standardStorageRadio,
+            """
+Windowsの標準的なアプリ用フォルダに、登録内容と設定を保存します。
+迷った場合はこれを選んでください。
+アプリ本体のフォルダを移動しても、登録内容と設定は維持されます。
+"""));
+        panel.Controls.Add(CreateStorageOptionPanel(
+            _portableStorageRadio,
+            """
+アプリ本体と同じ場所に ContextBinder_Data フォルダを作り、登録内容と設定を保存します。
+フォルダごとバックアップ・移動したい人向けです。
+Program Files など書き込み権限が厳しい場所では失敗することがあります。
+AppDataには保存しません。
+"""));
+        Panel customPanel = CreateStorageOptionPanel(
+            _customStorageRadio,
+            """
+自分で選んだフォルダに登録内容と設定を保存します。
+OneDrive、別ドライブ、外部ドライブなどを使いたい人向けです。
+同期中、権限不足、外部ドライブ未接続には注意してください。
+AppDataには保存しません。
+""",
+            150);
+        FlowLayoutPanel customPathPanel = new()
+        {
+            Location = new Point(30, 112),
+            Width = ContentWidth - 40,
+            Height = 32,
+            FlowDirection = FlowDirection.LeftToRight
+        };
+        customPathPanel.Controls.Add(_customDirectoryTextBox);
+        customPathPanel.Controls.Add(_browseButton);
+        customPanel.Controls.Add(customPathPanel);
+        panel.Controls.Add(customPanel);
+
+        _storageDescriptionLabel.Width = ContentWidth;
+        _storageDescriptionLabel.Height = 64;
+        _storageDescriptionLabel.Margin = new Padding(0, 8, 0, 0);
+        _storagePreviewLabel.Width = ContentWidth;
+        _storagePreviewLabel.Height = 48;
+        _storagePreviewLabel.BorderStyle = BorderStyle.FixedSingle;
+        _storagePreviewLabel.Padding = new Padding(8);
+        panel.Controls.Add(_storageDescriptionLabel);
+        panel.Controls.Add(_storagePreviewLabel);
+        UpdateStoragePreview();
+        return panel;
+    }
+
+    private Control BuildSettingsPage()
+    {
+        FlowLayoutPanel panel = CreateVerticalPanel();
         bool customSetup = _customSetupRadio.Checked;
-        _storageGroup.Enabled = customSetup;
+
+        panel.Controls.Add(CreateHeading(customSetup ? "使いやすさ設定を変更してください" : "おすすめ設定の内容を確認してください"));
+        panel.Controls.Add(CreateParagraph(customSetup
+            ? "必要な項目を変更できます。後の設定画面でさらに調整する想定です。"
+            : "初心者おすすめ設定は、見やすさと安全性を優先した初期値です。必要なら少し変更できます。"));
 
         if (!customSetup)
         {
-            _standardStorageRadio.Checked = true;
+            _editRecommendedSettingsCheckBox.Width = ContentWidth;
+            panel.Controls.Add(_editRecommendedSettingsCheckBox);
         }
 
-        bool customDirectoryEnabled = customSetup && _customStorageRadio.Checked;
-        _customDirectoryTextBox.Enabled = customDirectoryEnabled;
-        _browseButton.Enabled = customDirectoryEnabled;
+        panel.Controls.Add(CreateSettingSectionLabel("表示"));
+        panel.Controls.Add(CreateComboRow("種類表示", _typeDisplayModeComboBox, "非表示は分かりづらくなるため非推奨です。"));
+        panel.Controls.Add(_showBeginnerHintsCheckBox);
+        panel.Controls.Add(_showIconLegendCheckBox);
+        panel.Controls.Add(_showOperationStatusCheckBox);
+
+        panel.Controls.Add(CreateSettingSectionLabel("ドラッグ＆ドロップ"));
+        panel.Controls.Add(_confirmTitleOnDropAddCheckBox);
+        panel.Controls.Add(_focusExistingItemOnDuplicateCheckBox);
+        panel.Controls.Add(_enableGroupDropModifierShortcutsCheckBox);
+        panel.Controls.Add(_confirmGroupDropCopyMoveCheckBox);
+        panel.Controls.Add(_enableItemDragReorderCheckBox);
+        panel.Controls.Add(_enableExternalFileDropOutCheckBox);
+        panel.Controls.Add(_enableExternalUrlTextDragOutCheckBox);
+        panel.Controls.Add(_enableExternalTemplateTextDragOutCheckBox);
+
+        panel.Controls.Add(CreateSettingSectionLabel("常駐・右クリック"));
+        panel.Controls.Add(_minimizeToTrayOnCloseCheckBox);
+        panel.Controls.Add(_enableContextMenuDetailsCheckBox);
+
+        panel.Controls.Add(CreateSettingSectionLabel("バックアップ・削除・検索"));
+        panel.Controls.Add(_autoBackupEnabledCheckBox);
+        panel.Controls.Add(CreateComboRow("バックアップ保持数", _maxBackupCountNumeric, "初期値は20件です。"));
+        panel.Controls.Add(_confirmBeforeDeleteCheckBox);
+        panel.Controls.Add(_moveDeletedItemsToTrashCheckBox);
+        panel.Controls.Add(_searchTemplateBodyCheckBox);
+
+        UpdateSettingsEditability();
+        return panel;
+    }
+
+    private Control BuildConfirmationPage()
+    {
+        FlowLayoutPanel panel = CreateVerticalPanel();
+        panel.Controls.Add(CreateHeading("確認して開始"));
+
+        TextBox summaryTextBox = new()
+        {
+            Width = ContentWidth,
+            Height = 540,
+            Multiline = true,
+            ReadOnly = true,
+            ScrollBars = ScrollBars.Vertical,
+            Text = BuildSummaryText()
+        };
+        panel.Controls.Add(summaryTextBox);
+        return panel;
+    }
+
+    private static FlowLayoutPanel CreateVerticalPanel()
+    {
+        return new FlowLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            FlowDirection = FlowDirection.TopDown,
+            WrapContents = false,
+            AutoScroll = true
+        };
+    }
+
+    private static Label CreateHeading(string text)
+    {
+        return new Label
+        {
+            Text = text,
+            Width = ContentWidth,
+            Height = 36,
+            Font = new Font(Control.DefaultFont, FontStyle.Bold),
+            TextAlign = ContentAlignment.MiddleLeft
+        };
+    }
+
+    private static Label CreateParagraph(string text)
+    {
+        return new Label
+        {
+            Text = text,
+            Width = ContentWidth,
+            AutoSize = true,
+            MaximumSize = new Size(ContentWidth, 0),
+            Margin = new Padding(0, 0, 0, 12)
+        };
+    }
+
+    private static Panel CreateOptionPanel(RadioButton radioButton, string description, int height)
+    {
+        Panel panel = new()
+        {
+            Width = ContentWidth,
+            Height = height,
+            BorderStyle = BorderStyle.FixedSingle,
+            Padding = new Padding(10),
+            Margin = new Padding(0, 0, 0, 10)
+        };
+
+        radioButton.Location = new Point(10, 10);
+        radioButton.Width = ContentWidth - 30;
+        Label descriptionLabel = new()
+        {
+            Text = description,
+            Location = new Point(30, 38),
+            Width = ContentWidth - 50,
+            Height = height - 48
+        };
+        panel.Controls.Add(radioButton);
+        panel.Controls.Add(descriptionLabel);
+        return panel;
+    }
+
+    private static Panel CreateStorageOptionPanel(RadioButton radioButton, string description, int height = 124)
+    {
+        return CreateOptionPanel(radioButton, description, height);
+    }
+
+    private static Label CreateSettingSectionLabel(string text)
+    {
+        return new Label
+        {
+            Text = text,
+            Width = ContentWidth,
+            Height = 28,
+            Margin = new Padding(0, 10, 0, 2),
+            Font = new Font(Control.DefaultFont, FontStyle.Bold),
+            TextAlign = ContentAlignment.MiddleLeft
+        };
+    }
+
+    private static Panel CreateComboRow(string labelText, Control control, string description)
+    {
+        Panel panel = new()
+        {
+            Width = ContentWidth,
+            Height = 54
+        };
+        Label label = new()
+        {
+            Text = labelText,
+            Location = new Point(0, 4),
+            Width = 170,
+            Height = 24
+        };
+        control.Location = new Point(180, 0);
+        Label descriptionLabel = new()
+        {
+            Text = description,
+            Location = new Point(180, 28),
+            Width = ContentWidth - 190,
+            Height = 22
+        };
+        panel.Controls.Add(label);
+        panel.Controls.Add(control);
+        panel.Controls.Add(descriptionLabel);
+        return panel;
+    }
+
+    private void UpdateSettingsEditability()
+    {
+        bool canEdit = _customSetupRadio.Checked || _editRecommendedSettingsCheckBox.Checked;
+        foreach (Control control in _editableSettingsControls)
+        {
+            control.Enabled = canEdit;
+        }
+    }
+
+    private void UpdateStoragePreview()
+    {
+        _customDirectoryTextBox.Enabled = _customStorageRadio.Checked;
+        _browseButton.Enabled = _customStorageRadio.Checked;
+
+        SelectedStorageMode = GetSelectedStorageMode();
+        CustomStorageDirectory = _customStorageRadio.Checked ? _customDirectoryTextBox.Text.Trim() : string.Empty;
+
+        string description = SelectedStorageMode switch
+        {
+            StorageMode.Portable => "このアプリのフォルダに登録内容と設定を保存します。AppDataには保存しません。",
+            StorageMode.Custom => "自分で選んだフォルダに登録内容と設定を保存します。AppDataには保存しません。",
+            _ => "Windowsの標準的なアプリ用フォルダに登録内容と設定を保存します。"
+        };
+
+        _storageDescriptionLabel.Text = description;
+        _storagePreviewLabel.Text = $"保存先プレビュー: {CreateStoragePreviewText()}";
+    }
+
+    private string CreateStoragePreviewText()
+    {
+        if (_customStorageRadio.Checked && string.IsNullOrWhiteSpace(_customDirectoryTextBox.Text))
+        {
+            return "未選択";
+        }
+
+        try
+        {
+            StorageLocation location = _storageLocationService.CreateLocation(
+                GetSelectedStorageMode(),
+                _customStorageRadio.Checked ? _customDirectoryTextBox.Text.Trim() : null);
+            return location.DataDirectory;
+        }
+        catch (InvalidOperationException ex)
+        {
+            return ex.Message;
+        }
+    }
+
+    private void LoadSettingsIntoControls(AppSettings settings)
+    {
+        _typeDisplayModeComboBox.SelectedIndex = settings.TypeDisplayMode switch
+        {
+            TypeDisplayMode.IconOnly => 1,
+            TypeDisplayMode.TextOnly => 2,
+            TypeDisplayMode.Hidden => 3,
+            _ => 0
+        };
+        _showBeginnerHintsCheckBox.Checked = settings.ShowBeginnerHints;
+        _showIconLegendCheckBox.Checked = settings.ShowIconLegend;
+        _showOperationStatusCheckBox.Checked = settings.ShowOperationStatus;
+        _confirmTitleOnDropAddCheckBox.Checked = settings.ConfirmTitleOnDropAdd;
+        _focusExistingItemOnDuplicateCheckBox.Checked = settings.FocusExistingItemOnDuplicate;
+        _enableGroupDropModifierShortcutsCheckBox.Checked = settings.EnableGroupDropModifierShortcuts;
+        _confirmGroupDropCopyMoveCheckBox.Checked = settings.ConfirmGroupDropCopyMove;
+        _enableItemDragReorderCheckBox.Checked = settings.EnableItemDragReorder;
+        _enableExternalFileDropOutCheckBox.Checked = settings.EnableExternalFileDropOut;
+        _enableExternalUrlTextDragOutCheckBox.Checked = settings.EnableExternalUrlTextDragOut;
+        _enableExternalTemplateTextDragOutCheckBox.Checked = settings.EnableExternalTemplateTextDragOut;
+        _minimizeToTrayOnCloseCheckBox.Checked = settings.MinimizeToTrayOnClose;
+        _enableContextMenuDetailsCheckBox.Checked = settings.EnableContextMenuDetails;
+        _autoBackupEnabledCheckBox.Checked = settings.AutoBackupEnabled;
+        _maxBackupCountNumeric.Value = Math.Clamp(settings.MaxBackupCount, 1, 100);
+        _confirmBeforeDeleteCheckBox.Checked = settings.ConfirmBeforeDelete;
+        _moveDeletedItemsToTrashCheckBox.Checked = settings.MoveDeletedItemsToTrash;
+        _searchTemplateBodyCheckBox.Checked = settings.SearchTemplateBody;
+    }
+
+    private AppSettings CreateSettingsFromControls()
+    {
+        AppSettings settings = AppSettingsFactory.CreateRecommended();
+        settings.TypeDisplayMode = _typeDisplayModeComboBox.SelectedIndex switch
+        {
+            1 => TypeDisplayMode.IconOnly,
+            2 => TypeDisplayMode.TextOnly,
+            3 => TypeDisplayMode.Hidden,
+            _ => TypeDisplayMode.IconAndText
+        };
+        settings.ShowBeginnerHints = _showBeginnerHintsCheckBox.Checked;
+        settings.ShowIconLegend = _showIconLegendCheckBox.Checked;
+        settings.ShowOperationStatus = _showOperationStatusCheckBox.Checked;
+        settings.ConfirmTitleOnDropAdd = _confirmTitleOnDropAddCheckBox.Checked;
+        settings.FocusExistingItemOnDuplicate = _focusExistingItemOnDuplicateCheckBox.Checked;
+        settings.EnableGroupDropModifierShortcuts = _enableGroupDropModifierShortcutsCheckBox.Checked;
+        settings.ConfirmGroupDropCopyMove = _confirmGroupDropCopyMoveCheckBox.Checked;
+        settings.EnableItemDragReorder = _enableItemDragReorderCheckBox.Checked;
+        settings.EnableExternalFileDropOut = _enableExternalFileDropOutCheckBox.Checked;
+        settings.EnableExternalUrlTextDragOut = _enableExternalUrlTextDragOutCheckBox.Checked;
+        settings.EnableExternalTemplateTextDragOut = _enableExternalTemplateTextDragOutCheckBox.Checked;
+        settings.MinimizeToTrayOnClose = _minimizeToTrayOnCloseCheckBox.Checked;
+        settings.EnableContextMenuDetails = _enableContextMenuDetailsCheckBox.Checked;
+        settings.AutoBackupEnabled = _autoBackupEnabledCheckBox.Checked;
+        settings.MaxBackupCount = (int)_maxBackupCountNumeric.Value;
+        settings.ConfirmBeforeDelete = _confirmBeforeDeleteCheckBox.Checked;
+        settings.MoveDeletedItemsToTrash = _moveDeletedItemsToTrashCheckBox.Checked;
+        settings.SearchTemplateBody = _searchTemplateBodyCheckBox.Checked;
+        return settings;
     }
 
     private void BrowseButton_Click(object? sender, EventArgs e)
@@ -194,31 +624,135 @@ public sealed class FirstRunSetupForm : Form
         }
     }
 
-    private void StartButton_Click(object? sender, EventArgs e)
+    private void NextButton_Click(object? sender, EventArgs e)
     {
-        if (_recommendedSetupRadio.Checked || _standardStorageRadio.Checked)
+        if (!ValidateCurrentStep())
         {
-            SelectedStorageMode = StorageMode.Standard;
-            CustomStorageDirectory = string.Empty;
             return;
         }
 
+        if (_currentStep < LastStepIndex)
+        {
+            MoveStep(1);
+            return;
+        }
+
+        SelectedStorageMode = GetSelectedStorageMode();
+        CustomStorageDirectory = _customStorageRadio.Checked ? _customDirectoryTextBox.Text.Trim() : string.Empty;
+        SelectedAppSettings = CreateSettingsFromControls();
+        DialogResult = DialogResult.OK;
+        Close();
+    }
+
+    private bool ValidateCurrentStep()
+    {
+        if (_currentStep == 1 && _customStorageRadio.Checked && string.IsNullOrWhiteSpace(_customDirectoryTextBox.Text))
+        {
+            MessageBox.Show(this, "自分で選んだ場所に保存する場合は、保存するフォルダを選んでください。", "入力確認", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return false;
+        }
+
+        if (_currentStep == 2 && _typeDisplayModeComboBox.SelectedIndex == 3)
+        {
+            DialogResult result = MessageBox.Show(
+                this,
+                "種類表示を非表示にすると、項目の種類が分かりにくくなります。この設定で進みますか？",
+                "種類表示の確認",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning);
+            return result == DialogResult.Yes;
+        }
+
+        return true;
+    }
+
+    private void MoveStep(int delta)
+    {
+        _currentStep = Math.Clamp(_currentStep + delta, 0, LastStepIndex);
+        RenderCurrentStep();
+    }
+
+    private StorageMode GetSelectedStorageMode()
+    {
         if (_portableStorageRadio.Checked)
         {
-            SelectedStorageMode = StorageMode.Portable;
-            CustomStorageDirectory = string.Empty;
-            return;
+            return StorageMode.Portable;
         }
 
-        string customDirectory = _customDirectoryTextBox.Text.Trim();
-        if (string.IsNullOrWhiteSpace(customDirectory))
+        return _customStorageRadio.Checked ? StorageMode.Custom : StorageMode.Standard;
+    }
+
+    private string BuildSummaryText()
+    {
+        AppSettings settings = CreateSettingsFromControls();
+        return $"""
+始め方:
+{(_customSetupRadio.Checked ? "カスタム設定" : "初心者おすすめ")}
+
+登録内容と設定の保存場所:
+{GetStorageModeDisplayName(GetSelectedStorageMode())}
+
+保存先パス:
+{CreateStoragePreviewText()}
+
+主な設定内容:
+・種類表示: {GetTypeDisplayModeDisplayName(settings.TypeDisplayMode)}
+・初心者向け説明: {OnOff(settings.ShowBeginnerHints)}
+・アイコン凡例: {OnOff(settings.ShowIconLegend)}
+・D&D追加時タイトル確認: {OnOff(settings.ConfirmTitleOnDropAdd)}
+・重複時に既存項目へジャンプ: {OnOff(settings.FocusExistingItemOnDuplicate)}
+・Ctrl/Shiftドロップショートカット: {OnOff(settings.EnableGroupDropModifierShortcuts)}
+・通常グループドロップ時確認: {OnOff(settings.ConfirmGroupDropCopyMove)}
+・閉じるボタンでタスクトレイ: {OnOff(settings.MinimizeToTrayOnClose)}
+・自動バックアップ: {OnOff(settings.AutoBackupEnabled)} / 保持数 {settings.MaxBackupCount}
+・削除前確認: {OnOff(settings.ConfirmBeforeDelete)}
+・削除時ごみ箱移動: {OnOff(settings.MoveDeletedItemsToTrash)}
+・テンプレート本文検索: {OnOff(settings.SearchTemplateBody)}
+
+作成されるもの:
+・contextbinder.store.json
+・settings.json
+・backups
+・trash
+
+保存されるもの:
+・登録したファイル、フォルダ、URLの参照先
+・登録したテンプレート文
+・グループ名と並び順
+・表示設定や操作設定
+・自動バックアップ
+・ごみ箱、削除履歴
+
+保存されないもの:
+・登録元のファイルそのもの
+・登録元の画像や動画そのもの
+・登録元のフォルダの中身
+""";
+    }
+
+    private static string GetStorageModeDisplayName(StorageMode mode)
+    {
+        return mode switch
         {
-            MessageBox.Show(this, "保存するフォルダを選んでください。", "入力確認", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            DialogResult = DialogResult.None;
-            return;
-        }
+            StorageMode.Portable => "このアプリのフォルダに保存",
+            StorageMode.Custom => "自分で選んだ場所に保存",
+            _ => "通常の場所に保存（おすすめ）"
+        };
+    }
 
-        SelectedStorageMode = StorageMode.Custom;
-        CustomStorageDirectory = customDirectory;
+    private static string GetTypeDisplayModeDisplayName(TypeDisplayMode mode)
+    {
+        return mode switch
+        {
+            TypeDisplayMode.IconOnly => "アイコンのみ",
+            TypeDisplayMode.TextOnly => "文字のみ",
+            TypeDisplayMode.Hidden => "非表示",
+            _ => "アイコン＋文字"
+        };
+    }
+
+    private static string OnOff(bool value)
+    {
+        return value ? "ON" : "OFF";
     }
 }

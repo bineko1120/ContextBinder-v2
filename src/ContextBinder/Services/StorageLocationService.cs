@@ -125,14 +125,9 @@ public sealed class StorageLocationService
         }
     }
 
-    public AppSettings CreateInitialSettings(StorageLocation location)
+    public AppSettings CreateInitialSettings(StorageLocation location, AppSettings? selectedSettings = null)
     {
-        return new AppSettings
-        {
-            FirstRunCompleted = true,
-            StorageMode = location.Mode,
-            CustomStorageDirectory = location.Mode == StorageMode.Custom ? location.DataDirectory : string.Empty
-        };
+        return AppSettingsFactory.CreateForFirstRun(location, selectedSettings);
     }
 
     private string? GetCommandLineDataDirectory()

@@ -14,15 +14,26 @@ public sealed class MainForm : Form
     private readonly StoreService _storeService;
     private readonly ItemActionService _itemActionService;
     private readonly DragDropService _dragDropService;
+    private readonly ToolTip _toolTip = new();
 
     private readonly ListBox _groupListBox = new();
     private readonly DataGridView _itemGrid = new();
-    private readonly Label _descriptionLabel = new();
+    private readonly CheckBox _showBeginnerHintsCheckBox = new();
+    private readonly CheckBox _showIconLegendCheckBox = new();
+    private readonly Label _beginnerHintsLabel = new();
     private readonly Label _statusLabel = new();
-    private readonly Label _legendLabel = new();
+    private readonly Panel _beginnerHintsPanel = new();
+    private readonly Panel _iconLegendPanel = new();
+    private readonly FlowLayoutPanel _iconLegendFlow = new();
     private readonly ContextMenuStrip _itemContextMenu = new();
     private readonly NotifyIcon _notifyIcon = new();
     private readonly ContextMenuStrip _trayMenu = new();
+    private readonly TableLayoutPanel _bottomPanel = new();
+
+    private Button? _detailButton;
+    private ToolStripItem? _detailContextMenuItem;
+    private RowStyle? _bottomRowStyle;
+    private bool _loadingSettings;
 
     private ContextBinderStore _store = new();
     private AppSettings _settings = new();
@@ -91,6 +102,7 @@ public sealed class MainForm : Form
         root.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 165));
         root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         root.RowStyles.Add(new RowStyle(SizeType.Absolute, 90));
+        _bottomRowStyle = root.RowStyles[1];
 
         Panel groupPanel = new()
         {
@@ -132,51 +144,119 @@ public sealed class MainForm : Form
             Padding = new Padding(8, 0, 0, 0)
         };
 
+        Button detailButton = CreateActionButton("詳細", "登録内容の詳細を確認します。", DetailSelectedButton_Click);
+        _detailButton = detailButton;
         actionPanel.Controls.AddRange([
-            CreateActionButton("グループ追加", AddGroupButton_Click),
-            CreateActionButton("ファイル追加", AddFileButton_Click),
-            CreateActionButton("フォルダー追加", AddFolderButton_Click),
-            CreateActionButton("URL追加", AddUrlButton_Click),
-            CreateActionButton("テンプレート追加", AddTemplateButton_Click),
-            CreateActionButton("開く", OpenSelectedButton_Click),
-            CreateActionButton("コピー", CopySelectedButton_Click),
-            CreateActionButton("編集", EditSelectedButton_Click),
-            CreateActionButton("詳細", DetailSelectedButton_Click),
-            CreateActionButton("削除", DeleteSelectedButton_Click)
+            CreateActionButton("グループ追加", "用途ごとに登録先を分けます。", AddGroupButton_Click),
+            CreateActionButton("ファイル追加", "ファイルへの参照を現在のグループへ登録します。", AddFileButton_Click),
+            CreateActionButton("フォルダー追加", "フォルダーへの参照を現在のグループへ登録します。", AddFolderButton_Click),
+            CreateActionButton("URL追加", "WebページのURLを現在のグループへ登録します。", AddUrlButton_Click),
+            CreateActionButton("テンプレート追加", "よく使う文章を登録します。", AddTemplateButton_Click),
+            CreateActionButton("開く", "選択した項目を開きます。テンプレートは本文をコピーします。", OpenSelectedButton_Click),
+            CreateActionButton("コピー", "選択した項目のパス、URL、本文などをコピーします。", CopySelectedButton_Click),
+            CreateActionButton("編集", "タイトルや参照先を編集します。", EditSelectedButton_Click),
+            detailButton,
+            CreateActionButton("削除", "選択した項目を削除します。登録元ファイルは削除されません。", DeleteSelectedButton_Click)
         ]);
 
-        TableLayoutPanel bottomPanel = new()
-        {
-            Dock = DockStyle.Fill,
-            ColumnCount = 1,
-            RowCount = 3,
-            Padding = new Padding(0, 8, 0, 0)
-        };
-        bottomPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 40));
-        bottomPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 30));
-        bottomPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 30));
-
-        _descriptionLabel.Dock = DockStyle.Fill;
-        _descriptionLabel.Text = "ファイル・フォルダー・URL・テキストをここにドラッグ＆ドロップすると登録できます。右クリックで詳細操作を表示できます。";
-        _descriptionLabel.TextAlign = ContentAlignment.MiddleLeft;
-
-        _statusLabel.Dock = DockStyle.Fill;
-        _statusLabel.TextAlign = ContentAlignment.MiddleLeft;
-
-        _legendLabel.Dock = DockStyle.Fill;
-        _legendLabel.Text = "凡例: フォルダー / ファイル / 画像 / 動画 / URL / テンプレート";
-        _legendLabel.TextAlign = ContentAlignment.MiddleLeft;
-
-        bottomPanel.Controls.Add(_descriptionLabel, 0, 0);
-        bottomPanel.Controls.Add(_statusLabel, 0, 1);
-        bottomPanel.Controls.Add(_legendLabel, 0, 2);
+        BuildBottomPanel();
 
         root.Controls.Add(groupPanel, 0, 0);
         root.Controls.Add(_itemGrid, 1, 0);
         root.Controls.Add(actionPanel, 2, 0);
-        root.Controls.Add(bottomPanel, 0, 1);
-        root.SetColumnSpan(bottomPanel, 3);
+        root.Controls.Add(_bottomPanel, 0, 1);
+        root.SetColumnSpan(_bottomPanel, 3);
         Controls.Add(root);
+    }
+
+    private void BuildBottomPanel()
+    {
+        _bottomPanel.Dock = DockStyle.Fill;
+        _bottomPanel.ColumnCount = 1;
+        _bottomPanel.RowCount = 3;
+        _bottomPanel.Padding = new Padding(0, 8, 0, 0);
+        _bottomPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
+        _bottomPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 58));
+        _bottomPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 70));
+
+        FlowLayoutPanel togglePanel = new()
+        {
+            Dock = DockStyle.Fill,
+            FlowDirection = FlowDirection.LeftToRight,
+            WrapContents = false
+        };
+        _showBeginnerHintsCheckBox.Text = "初心者向け説明を表示";
+        _showBeginnerHintsCheckBox.Width = 170;
+        _showBeginnerHintsCheckBox.CheckedChanged += DisplayToggleCheckBox_CheckedChanged;
+        _showIconLegendCheckBox.Text = "アイコン凡例を表示";
+        _showIconLegendCheckBox.Width = 150;
+        _showIconLegendCheckBox.CheckedChanged += DisplayToggleCheckBox_CheckedChanged;
+        _statusLabel.AutoSize = false;
+        _statusLabel.Width = 720;
+        _statusLabel.Height = 26;
+        _statusLabel.TextAlign = ContentAlignment.MiddleLeft;
+        togglePanel.Controls.Add(_showBeginnerHintsCheckBox);
+        togglePanel.Controls.Add(_showIconLegendCheckBox);
+        togglePanel.Controls.Add(_statusLabel);
+
+        _beginnerHintsPanel.Dock = DockStyle.Fill;
+        _beginnerHintsPanel.BorderStyle = BorderStyle.FixedSingle;
+        _beginnerHintsPanel.Padding = new Padding(8);
+        _beginnerHintsLabel.Dock = DockStyle.Fill;
+        _beginnerHintsLabel.TextAlign = ContentAlignment.MiddleLeft;
+        _beginnerHintsLabel.Text = "操作: グループ追加=用途ごとに登録先を分けます / ファイル・フォルダー・URL・テンプレート追加=参照先や文章を登録します / 開く=選択項目を開きます / コピー=パス・URL・本文をコピーします / 編集・詳細・削除=登録内容を管理します";
+        _beginnerHintsPanel.Controls.Add(_beginnerHintsLabel);
+
+        _iconLegendPanel.Dock = DockStyle.Fill;
+        _iconLegendPanel.BorderStyle = BorderStyle.FixedSingle;
+        _iconLegendPanel.Padding = new Padding(8);
+        _iconLegendFlow.Dock = DockStyle.Fill;
+        _iconLegendFlow.FlowDirection = FlowDirection.LeftToRight;
+        _iconLegendFlow.WrapContents = false;
+        _iconLegendPanel.Controls.Add(_iconLegendFlow);
+        BuildIconLegend();
+
+        _bottomPanel.Controls.Add(togglePanel, 0, 0);
+        _bottomPanel.Controls.Add(_beginnerHintsPanel, 0, 1);
+        _bottomPanel.Controls.Add(_iconLegendPanel, 0, 2);
+    }
+
+    private void BuildIconLegend()
+    {
+        _iconLegendFlow.Controls.Clear();
+        AddLegendItem(BinderItemType.Folder, "フォルダー", "フォルダーを開きます");
+        AddLegendItem(BinderItemType.File, "ファイル", "既定のアプリで開きます");
+        AddLegendItem(BinderItemType.Image, "画像", "画像ファイルです");
+        AddLegendItem(BinderItemType.Video, "動画", "動画ファイルです");
+        AddLegendItem(BinderItemType.Url, "URL", "ブラウザで開きます");
+        AddLegendItem(BinderItemType.Template, "テンプレート", "本文をコピーして使います");
+    }
+
+    private void AddLegendItem(BinderItemType type, string title, string description)
+    {
+        Panel itemPanel = new()
+        {
+            Width = 180,
+            Height = 48,
+            Margin = new Padding(0, 0, 6, 0)
+        };
+        PictureBox pictureBox = new()
+        {
+            Image = _iconAssetService.GetItemIcon(type),
+            SizeMode = PictureBoxSizeMode.Zoom,
+            Location = new Point(0, 8),
+            Size = new Size(30, 30)
+        };
+        Label label = new()
+        {
+            Text = $"{title}: {description}",
+            Location = new Point(36, 2),
+            Size = new Size(138, 44),
+            TextAlign = ContentAlignment.MiddleLeft
+        };
+        itemPanel.Controls.Add(pictureBox);
+        itemPanel.Controls.Add(label);
+        _iconLegendFlow.Controls.Add(itemPanel);
     }
 
     private void ConfigureItemGridColumns()
@@ -227,7 +307,7 @@ public sealed class MainForm : Form
         });
     }
 
-    private Button CreateActionButton(string text, EventHandler clickHandler)
+    private Button CreateActionButton(string text, string toolTipText, EventHandler clickHandler)
     {
         Button button = new()
         {
@@ -237,6 +317,7 @@ public sealed class MainForm : Form
             Margin = new Padding(0, 0, 0, 7)
         };
         button.Click += clickHandler;
+        _toolTip.SetToolTip(button, toolTipText);
         return button;
     }
 
@@ -245,7 +326,7 @@ public sealed class MainForm : Form
         _itemContextMenu.Items.Add("開く", null, OpenSelectedButton_Click);
         _itemContextMenu.Items.Add("コピー", null, CopySelectedButton_Click);
         _itemContextMenu.Items.Add("編集", null, EditSelectedButton_Click);
-        _itemContextMenu.Items.Add("詳細", null, DetailSelectedButton_Click);
+        _detailContextMenuItem = _itemContextMenu.Items.Add("詳細", null, DetailSelectedButton_Click);
         _itemContextMenu.Items.Add(new ToolStripSeparator());
         _itemContextMenu.Items.Add("削除", null, DeleteSelectedButton_Click);
 
@@ -281,6 +362,7 @@ public sealed class MainForm : Form
         {
             _settings = _storeService.LoadSettings();
             _store = _storeService.LoadStore();
+            ApplySettingsToView();
             RefreshGroupList();
             SetStatus($"登録内容と設定を読み込みました。保存先: {_storeService.Location.DataDirectory}");
         }
@@ -289,8 +371,85 @@ public sealed class MainForm : Form
             MessageBox.Show(this, ex.Message, "読み込みエラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
             _settings = new AppSettings();
             _store = new ContextBinderStore();
+            ApplySettingsToView();
             RefreshGroupList();
         }
+    }
+
+    private void ApplySettingsToView()
+    {
+        _loadingSettings = true;
+        _showBeginnerHintsCheckBox.Checked = _settings.ShowBeginnerHints;
+        _showIconLegendCheckBox.Checked = _settings.ShowIconLegend;
+        _loadingSettings = false;
+
+        _beginnerHintsPanel.Visible = _settings.ShowBeginnerHints;
+        _iconLegendPanel.Visible = _settings.ShowIconLegend;
+        _statusLabel.Visible = _settings.ShowOperationStatus;
+        if (_detailButton is not null)
+        {
+            _detailButton.Enabled = _settings.EnableContextMenuDetails;
+        }
+
+        if (_detailContextMenuItem is not null)
+        {
+            _detailContextMenuItem.Enabled = _settings.EnableContextMenuDetails;
+        }
+
+        ApplyTypeDisplayMode();
+        UpdateBottomPanelHeight();
+    }
+
+    private void ApplyTypeDisplayMode()
+    {
+        bool showIcon = _settings.TypeDisplayMode is TypeDisplayMode.IconAndText or TypeDisplayMode.IconOnly;
+        bool showText = _settings.TypeDisplayMode is TypeDisplayMode.IconAndText or TypeDisplayMode.TextOnly;
+
+        if (_itemGrid.Columns[nameof(ItemGridRow.Icon)] is DataGridViewColumn iconColumn)
+        {
+            iconColumn.Visible = showIcon;
+        }
+
+        if (_itemGrid.Columns[nameof(ItemGridRow.Type)] is DataGridViewColumn typeColumn)
+        {
+            typeColumn.Visible = showText;
+        }
+    }
+
+    private void UpdateBottomPanelHeight()
+    {
+        if (_bottomRowStyle is null)
+        {
+            return;
+        }
+
+        int height = 44;
+        _bottomPanel.RowStyles[1].Height = _settings.ShowBeginnerHints ? 58 : 0;
+        _bottomPanel.RowStyles[2].Height = _settings.ShowIconLegend ? 70 : 0;
+        if (_settings.ShowBeginnerHints)
+        {
+            height += 58;
+        }
+
+        if (_settings.ShowIconLegend)
+        {
+            height += 70;
+        }
+
+        _bottomRowStyle.Height = height;
+    }
+
+    private void DisplayToggleCheckBox_CheckedChanged(object? sender, EventArgs e)
+    {
+        if (_loadingSettings)
+        {
+            return;
+        }
+
+        _settings.ShowBeginnerHints = _showBeginnerHintsCheckBox.Checked;
+        _settings.ShowIconLegend = _showIconLegendCheckBox.Checked;
+        ApplySettingsToView();
+        SaveSettingsOnly();
     }
 
     private void RefreshGroupList()
@@ -332,6 +491,7 @@ public sealed class MainForm : Form
             item.Type == BinderItemType.Template ? CreateTemplatePreview(item.TemplateText) : item.PathOrUrl,
             GetItemStatus(item))).ToList();
 
+        ApplyTypeDisplayMode();
     }
 
     private void AddGroupButton_Click(object? sender, EventArgs e)
@@ -588,20 +748,31 @@ public sealed class MainForm : Form
             return;
         }
 
-        DialogResult result = MessageBox.Show(
-            this,
-            $"「{item.Title}」を削除します。登録元のファイルやフォルダーは削除されません。",
-            "削除確認",
-            MessageBoxButtons.OKCancel,
-            MessageBoxIcon.Warning);
-
-        if (result != DialogResult.OK)
+        if (_settings.ConfirmBeforeDelete)
         {
-            return;
+            DialogResult result = MessageBox.Show(
+                this,
+                $"「{item.Title}」を削除します。登録元のファイルやフォルダーは削除されません。",
+                "削除確認",
+                MessageBoxButtons.OKCancel,
+                MessageBoxIcon.Warning);
+
+            if (result != DialogResult.OK)
+            {
+                return;
+            }
         }
 
-        DeletedItemRecord deletedItemRecord = _trashService.MoveItemToTrash(group, item);
-        _store.DeletedItems.Add(deletedItemRecord);
+        if (_settings.MoveDeletedItemsToTrash)
+        {
+            DeletedItemRecord deletedItemRecord = _trashService.MoveItemToTrash(group, item);
+            _store.DeletedItems.Add(deletedItemRecord);
+        }
+        else
+        {
+            group.Items.Remove(item);
+        }
+
         SaveAll();
         RefreshItemGrid();
         SetStatus("項目を削除しました。");
@@ -729,6 +900,19 @@ public sealed class MainForm : Form
         }
     }
 
+    private void SaveSettingsOnly()
+    {
+        try
+        {
+            _storeService.SaveSettings(_settings);
+            SetStatus("表示設定を保存しました。");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            MessageBox.Show(this, $"登録内容と設定の保存に失敗しました。\n{ex.Message}", "保存エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
     private void SetStatus(string message)
     {
         _statusLabel.Text = message;
@@ -757,6 +941,7 @@ public sealed class MainForm : Form
         _notifyIcon.Visible = false;
         _notifyIcon.Dispose();
         _iconAssetService.Dispose();
+        _toolTip.Dispose();
         _trayMenu.Dispose();
         _itemContextMenu.Dispose();
         _runtimeResourcesDisposed = true;

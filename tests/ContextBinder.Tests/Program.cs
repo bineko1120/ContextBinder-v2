@@ -23,8 +23,17 @@ try
     File.WriteAllText(imagePath, "not a real image");
     Assert(detector.DetectFromPath(imagePath) == BinderItemType.Image, "画像拡張子が Image と判定されること");
 
+    AppSettings recommendedSettings = AppSettingsFactory.CreateRecommended();
+    AssertRecommendedSettings(recommendedSettings);
+
     StorageLocationService standardLocationService = new([], appRoot, standardRoot);
     Assert(standardLocationService.ResolveExistingLocation() is null, "未設定時は初回セットアップが必要になること");
+    RunStaTest(() =>
+    {
+        using FirstRunSetupForm setupForm = new(standardLocationService);
+        Assert(setupForm.SelectedStorageMode == StorageMode.Standard, "初回セットアップフォームの既定保存場所が標準モードであること");
+        Assert(setupForm.SelectedAppSettings.TypeDisplayMode == TypeDisplayMode.IconAndText, "初回セットアップフォームの既定設定が初心者おすすめであること");
+    });
 
     StorageLocation standardLocation = standardLocationService.InitializeFirstRun(StorageMode.Standard);
     Assert(standardLocation.Mode == StorageMode.Standard, "標準モードで保存先解決できること");
@@ -32,6 +41,7 @@ try
     AssertRequiredDirectoriesExist(standardLocation);
 
     AppSettings settings = standardLocationService.CreateInitialSettings(standardLocation);
+    AssertRecommendedSettings(settings);
     settings.AutoBackupEnabled = false;
     StoreService standardStoreService = new(standardLocation, new BackupService());
     standardStoreService.SaveSettings(settings);
@@ -40,10 +50,33 @@ try
     AppSettings loadedStandardSettings = standardStoreService.LoadSettings();
     Assert(loadedStandardSettings.FirstRunCompleted, "標準モードで FirstRunCompleted が保存・読み込みされること");
     Assert(loadedStandardSettings.StorageMode == StorageMode.Standard, "標準モードの設定が読み戻されること");
+    Assert(loadedStandardSettings.ShowBeginnerHints, "初心者向け説明の初期値が保存・読み込みされること");
+    Assert(loadedStandardSettings.ShowIconLegend, "アイコン凡例の初期値が保存・読み込みされること");
+    Assert(loadedStandardSettings.TypeDisplayMode == TypeDisplayMode.IconAndText, "種類表示モードの初期値が保存・読み込みされること");
 
     standardStoreService.EnsureStoreFile();
     Assert(File.Exists(standardLocation.StoreFilePath), "標準モードで contextbinder.store.json が作成されること");
     Assert(standardStoreService.LoadStore().Groups.Count == 0, "標準モードで空の登録内容を読み込めること");
+
+    AppSettings customDisplaySettings = standardLocationService.CreateInitialSettings(standardLocation, AppSettingsFactory.CreateRecommended());
+    customDisplaySettings.ShowBeginnerHints = false;
+    customDisplaySettings.ShowIconLegend = false;
+    customDisplaySettings.TypeDisplayMode = TypeDisplayMode.TextOnly;
+    customDisplaySettings.ConfirmTitleOnDropAdd = true;
+    customDisplaySettings.FocusExistingItemOnDuplicate = false;
+    customDisplaySettings.EnableGroupDropModifierShortcuts = true;
+    customDisplaySettings.MaxBackupCount = 7;
+    customDisplaySettings.SearchTemplateBody = false;
+    standardStoreService.SaveSettings(customDisplaySettings);
+    AppSettings loadedCustomDisplaySettings = standardStoreService.LoadSettings();
+    Assert(!loadedCustomDisplaySettings.ShowBeginnerHints, "初心者向け説明OFFが settings.json に保存・読み込みされること");
+    Assert(!loadedCustomDisplaySettings.ShowIconLegend, "アイコン凡例OFFが settings.json に保存・読み込みされること");
+    Assert(loadedCustomDisplaySettings.TypeDisplayMode == TypeDisplayMode.TextOnly, "TypeDisplayMode が保存・読み込みされること");
+    Assert(loadedCustomDisplaySettings.ConfirmTitleOnDropAdd, "D&Dタイトル確認設定が保存・読み込みされること");
+    Assert(!loadedCustomDisplaySettings.FocusExistingItemOnDuplicate, "重複時ジャンプ設定が保存・読み込みされること");
+    Assert(loadedCustomDisplaySettings.EnableGroupDropModifierShortcuts, "Ctrl/Shiftドロップ設定が保存・読み込みされること");
+    Assert(loadedCustomDisplaySettings.MaxBackupCount == 7, "バックアップ保持数が保存・読み込みされること");
+    Assert(!loadedCustomDisplaySettings.SearchTemplateBody, "テンプレート本文検索設定が保存・読み込みされること");
 
     string missingIconRoot = Path.Combine(testRoot, "missing-icons");
     RunStaTest(() =>
@@ -54,6 +87,16 @@ try
         using MainForm form = new(new StoreService(standardLocation, new BackupService()), missingIconService);
         Assert(form.Text == "ContextBinder v2", "空の登録内容でも MainForm を初期化できること");
     });
+
+    customDisplaySettings.TypeDisplayMode = TypeDisplayMode.Hidden;
+    standardStoreService.SaveSettings(customDisplaySettings);
+    RunStaTest(() =>
+    {
+        using IconAssetService missingIconService = new(missingIconRoot);
+        using MainForm form = new(new StoreService(standardLocation, new BackupService()), missingIconService);
+        Assert(form.Text == "ContextBinder v2", "説明/凡例OFFかつ種類非表示でも MainForm を初期化できること");
+    });
+    standardStoreService.SaveSettings(loadedStandardSettings);
 
     string invalidIconRoot = Path.Combine(testRoot, "invalid-icons");
     Directory.CreateDirectory(invalidIconRoot);
@@ -242,6 +285,30 @@ static void AssertRequiredDirectoriesExist(StorageLocation location)
     Assert(Directory.Exists(location.DataDirectory), "登録内容と設定フォルダが作成されること");
     Assert(Directory.Exists(location.BackupDirectory), "backups フォルダが作成されること");
     Assert(Directory.Exists(location.TrashDirectory), "trash フォルダが作成されること");
+}
+
+static void AssertRecommendedSettings(AppSettings settings)
+{
+    Assert(settings.TypeDisplayMode == TypeDisplayMode.IconAndText, "初心者おすすめの種類表示がアイコン＋文字であること");
+    Assert(settings.ShowBeginnerHints, "初心者おすすめで初心者向け説明がONであること");
+    Assert(settings.ShowIconLegend, "初心者おすすめでアイコン凡例がONであること");
+    Assert(settings.ShowOperationStatus, "初心者おすすめで操作結果ステータスがONであること");
+    Assert(!settings.ConfirmTitleOnDropAdd, "初心者おすすめでD&Dタイトル確認がOFFであること");
+    Assert(settings.FocusExistingItemOnDuplicate, "初心者おすすめで重複時ジャンプがONであること");
+    Assert(!settings.EnableGroupDropModifierShortcuts, "初心者おすすめでCtrl/ShiftドロップショートカットがOFFであること");
+    Assert(settings.ConfirmGroupDropCopyMove, "初心者おすすめで通常グループドロップ確認がONであること");
+    Assert(settings.EnableItemDragReorder, "初心者おすすめで項目D&D並び替えがONであること");
+    Assert(settings.EnableExternalFileDropOut, "初心者おすすめでファイル外部D&DがONであること");
+    Assert(settings.EnableExternalUrlTextDragOut, "初心者おすすめでURL外部D&DがONであること");
+    Assert(settings.EnableExternalTemplateTextDragOut, "初心者おすすめでテンプレート外部D&DがONであること");
+    Assert(settings.MinimizeToTrayOnClose, "初心者おすすめで閉じるボタンのタスクトレイ格納がONであること");
+    Assert(settings.EnableContextMenuDetails, "初心者おすすめで右クリック詳細操作がONであること");
+    Assert(settings.AutoBackupEnabled, "初心者おすすめで自動バックアップがONであること");
+    Assert(settings.MaxBackupCount == 20, "初心者おすすめでバックアップ保持数が20であること");
+    Assert(settings.ConfirmBeforeDelete, "初心者おすすめで削除前確認がONであること");
+    Assert(settings.MoveDeletedItemsToTrash, "初心者おすすめで削除時ごみ箱移動がONであること");
+    Assert(settings.SearchScope == SearchScope.CurrentGroup, "初心者おすすめで検索範囲が現在のグループであること");
+    Assert(settings.SearchTemplateBody, "初心者おすすめでテンプレート本文検索がONであること");
 }
 
 static void AssertThrowsFriendlyError(Action action, string expectedMessagePart, string message)
