@@ -9,16 +9,37 @@ internal static class Program
     [STAThread]
     private static void Main(string[] args)
     {
-        ApplicationConfiguration.Initialize();
+        StartupErrorService startupErrorService = new();
+        StorageLocation? storageLocation = null;
 
-        StorageLocationService storageLocationService = new(args);
-        StorageLocation? storageLocation = ResolveStorageLocation(storageLocationService);
-        if (storageLocation is null)
+        try
         {
-            return;
-        }
+            ApplicationConfiguration.Initialize();
+            Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
+            Application.ThreadException += (_, e) => ShowStartupError(e.Exception, storageLocation, startupErrorService);
+            AppDomain.CurrentDomain.UnhandledException += (_, e) =>
+            {
+                if (e.ExceptionObject is Exception exception)
+                {
+                    startupErrorService.WriteStartupError(exception, storageLocation);
+                }
+            };
 
-        Application.Run(new MainForm(new StoreService(storageLocation, new BackupService())));
+            StorageLocationService storageLocationService = new(args);
+            storageLocation = ResolveStorageLocation(storageLocationService);
+            if (storageLocation is null)
+            {
+                return;
+            }
+
+            StoreService storeService = new(storageLocation, new BackupService());
+            using MainForm mainForm = new(storeService);
+            Application.Run(mainForm);
+        }
+        catch (Exception ex)
+        {
+            ShowStartupError(ex, storageLocation, startupErrorService);
+        }
     }
 
     private static StorageLocation? ResolveStorageLocation(StorageLocationService storageLocationService)
@@ -70,4 +91,18 @@ internal static class Program
             }
         }
     }
+
+    private static void ShowStartupError(
+        Exception exception,
+        StorageLocation? storageLocation,
+        StartupErrorService startupErrorService)
+    {
+        string? logPath = startupErrorService.WriteStartupError(exception, storageLocation);
+        MessageBox.Show(
+            StartupErrorService.CreateUserMessage(exception, logPath),
+            "起動エラー",
+            MessageBoxButtons.OK,
+            MessageBoxIcon.Error);
+    }
+
 }

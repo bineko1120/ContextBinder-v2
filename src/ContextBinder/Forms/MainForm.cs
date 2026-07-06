@@ -10,7 +10,7 @@ public sealed class MainForm : Form
     private readonly ClipboardService _clipboardService = new();
     private readonly SearchService _searchService = new();
     private readonly TrashService _trashService = new();
-    private readonly IconAssetService _iconAssetService = new();
+    private readonly IconAssetService _iconAssetService;
     private readonly StoreService _storeService;
     private readonly ItemActionService _itemActionService;
     private readonly DragDropService _dragDropService;
@@ -27,10 +27,12 @@ public sealed class MainForm : Form
     private ContextBinderStore _store = new();
     private AppSettings _settings = new();
     private bool _allowExit;
+    private bool _runtimeResourcesDisposed;
 
-    public MainForm(StoreService storeService)
+    public MainForm(StoreService storeService, IconAssetService? iconAssetService = null)
     {
         _storeService = storeService;
+        _iconAssetService = iconAssetService ?? new IconAssetService();
         _itemActionService = new ItemActionService(_clipboardService);
         _dragDropService = new DragDropService(_fileTypeDetector);
 
@@ -61,11 +63,18 @@ public sealed class MainForm : Form
         }
 
         _notifyIcon.Visible = false;
-        _notifyIcon.Dispose();
-        _iconAssetService.Dispose();
-        _trayMenu.Dispose();
-        _itemContextMenu.Dispose();
+        DisposeRuntimeResources();
         base.OnFormClosing(e);
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            DisposeRuntimeResources();
+        }
+
+        base.Dispose(disposing);
     }
 
     private void BuildLayout()
@@ -103,6 +112,7 @@ public sealed class MainForm : Form
         _itemGrid.AllowUserToAddRows = false;
         _itemGrid.AllowUserToDeleteRows = false;
         _itemGrid.AllowUserToResizeRows = false;
+        _itemGrid.AutoGenerateColumns = false;
         _itemGrid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
         _itemGrid.BackgroundColor = SystemColors.Window;
         _itemGrid.BorderStyle = BorderStyle.FixedSingle;
@@ -112,6 +122,7 @@ public sealed class MainForm : Form
         _itemGrid.RowHeadersVisible = false;
         _itemGrid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
         _itemGrid.ContextMenuStrip = _itemContextMenu;
+        ConfigureItemGridColumns();
 
         FlowLayoutPanel actionPanel = new()
         {
@@ -166,6 +177,54 @@ public sealed class MainForm : Form
         root.Controls.Add(bottomPanel, 0, 1);
         root.SetColumnSpan(bottomPanel, 3);
         Controls.Add(root);
+    }
+
+    private void ConfigureItemGridColumns()
+    {
+        _itemGrid.Columns.Clear();
+        _itemGrid.Columns.Add(new DataGridViewTextBoxColumn
+        {
+            Name = nameof(ItemGridRow.ItemId),
+            DataPropertyName = nameof(ItemGridRow.ItemId),
+            Visible = false
+        });
+        _itemGrid.Columns.Add(new DataGridViewImageColumn
+        {
+            Name = nameof(ItemGridRow.Icon),
+            DataPropertyName = nameof(ItemGridRow.Icon),
+            HeaderText = "",
+            Width = 42,
+            AutoSizeMode = DataGridViewAutoSizeColumnMode.None,
+            ImageLayout = DataGridViewImageCellLayout.Zoom
+        });
+        _itemGrid.Columns.Add(new DataGridViewTextBoxColumn
+        {
+            Name = nameof(ItemGridRow.Type),
+            DataPropertyName = nameof(ItemGridRow.Type),
+            HeaderText = "種類",
+            FillWeight = 18
+        });
+        _itemGrid.Columns.Add(new DataGridViewTextBoxColumn
+        {
+            Name = nameof(ItemGridRow.Title),
+            DataPropertyName = nameof(ItemGridRow.Title),
+            HeaderText = "タイトル",
+            FillWeight = 32
+        });
+        _itemGrid.Columns.Add(new DataGridViewTextBoxColumn
+        {
+            Name = nameof(ItemGridRow.Reference),
+            DataPropertyName = nameof(ItemGridRow.Reference),
+            HeaderText = "参照先",
+            FillWeight = 42
+        });
+        _itemGrid.Columns.Add(new DataGridViewTextBoxColumn
+        {
+            Name = nameof(ItemGridRow.Status),
+            DataPropertyName = nameof(ItemGridRow.Status),
+            HeaderText = "状態",
+            FillWeight = 12
+        });
     }
 
     private Button CreateActionButton(string text, EventHandler clickHandler)
@@ -273,42 +332,6 @@ public sealed class MainForm : Form
             item.Type == BinderItemType.Template ? CreateTemplatePreview(item.TemplateText) : item.PathOrUrl,
             GetItemStatus(item))).ToList();
 
-        if (_itemGrid.Columns[nameof(ItemGridRow.ItemId)] is DataGridViewColumn idColumn)
-        {
-            idColumn.Visible = false;
-        }
-
-        if (_itemGrid.Columns[nameof(ItemGridRow.Icon)] is DataGridViewImageColumn iconColumn)
-        {
-            iconColumn.HeaderText = "";
-            iconColumn.Width = 42;
-            iconColumn.FillWeight = 8;
-            iconColumn.ImageLayout = DataGridViewImageCellLayout.Zoom;
-        }
-
-        if (_itemGrid.Columns[nameof(ItemGridRow.Type)] is DataGridViewColumn typeColumn)
-        {
-            typeColumn.HeaderText = "種類";
-            typeColumn.FillWeight = 18;
-        }
-
-        if (_itemGrid.Columns[nameof(ItemGridRow.Title)] is DataGridViewColumn titleColumn)
-        {
-            titleColumn.HeaderText = "タイトル";
-            titleColumn.FillWeight = 32;
-        }
-
-        if (_itemGrid.Columns[nameof(ItemGridRow.Reference)] is DataGridViewColumn referenceColumn)
-        {
-            referenceColumn.HeaderText = "参照先";
-            referenceColumn.FillWeight = 42;
-        }
-
-        if (_itemGrid.Columns[nameof(ItemGridRow.Status)] is DataGridViewColumn statusColumn)
-        {
-            statusColumn.HeaderText = "状態";
-            statusColumn.FillWeight = 12;
-        }
     }
 
     private void AddGroupButton_Click(object? sender, EventArgs e)
@@ -722,6 +745,21 @@ public sealed class MainForm : Form
     {
         _allowExit = true;
         Close();
+    }
+
+    private void DisposeRuntimeResources()
+    {
+        if (_runtimeResourcesDisposed)
+        {
+            return;
+        }
+
+        _notifyIcon.Visible = false;
+        _notifyIcon.Dispose();
+        _iconAssetService.Dispose();
+        _trayMenu.Dispose();
+        _itemContextMenu.Dispose();
+        _runtimeResourcesDisposed = true;
     }
 
     private static string CreateTemplatePreview(string templateText)

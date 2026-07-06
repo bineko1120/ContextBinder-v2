@@ -1,3 +1,4 @@
+using ContextBinder.Forms;
 using ContextBinder.Models;
 using ContextBinder.Services;
 
@@ -43,6 +44,48 @@ try
     standardStoreService.EnsureStoreFile();
     Assert(File.Exists(standardLocation.StoreFilePath), "標準モードで contextbinder.store.json が作成されること");
     Assert(standardStoreService.LoadStore().Groups.Count == 0, "標準モードで空の登録内容を読み込めること");
+
+    string missingIconRoot = Path.Combine(testRoot, "missing-icons");
+    RunStaTest(() =>
+    {
+        using IconAssetService missingIconService = new(missingIconRoot);
+        Assert(missingIconService.GetItemIcon(BinderItemType.Image).Width > 0, "アイコンファイルがない場合でも項目アイコンを返せること");
+        Assert(missingIconService.GetAppIcon() is not null, "アプリアイコンがない場合でも既定アイコンを返せること");
+        using MainForm form = new(new StoreService(standardLocation, new BackupService()), missingIconService);
+        Assert(form.Text == "ContextBinder v2", "空の登録内容でも MainForm を初期化できること");
+    });
+
+    string invalidIconRoot = Path.Combine(testRoot, "invalid-icons");
+    Directory.CreateDirectory(invalidIconRoot);
+    File.WriteAllText(Path.Combine(invalidIconRoot, "icon_app.ico"), "not an icon");
+    File.WriteAllText(Path.Combine(invalidIconRoot, "icon_cat_file.png"), "not an image");
+    using (IconAssetService invalidIconService = new(invalidIconRoot))
+    {
+        Assert(invalidIconService.GetItemIcon(BinderItemType.File).Width > 0, "壊れた項目アイコンでもプレースホルダーを返せること");
+        Assert(invalidIconService.GetAppIcon() is not null, "壊れたアプリアイコンでも既定アイコンを返せること");
+    }
+
+    StartupErrorService startupErrorService = new(Path.Combine(testRoot, "fallback-log"));
+    string? startupLogPath = startupErrorService.WriteStartupError(
+        new InvalidOperationException("startup smoke"),
+        standardLocation);
+    Assert(startupLogPath == Path.Combine(standardLocation.DataDirectory, StartupErrorService.LogFileName), "起動エラーは登録内容と設定フォルダへ保存されること");
+    if (startupLogPath is null)
+    {
+        throw new InvalidOperationException("テスト失敗: 起動エラーログが保存されること");
+    }
+
+    Assert(File.ReadAllText(startupLogPath).Contains("startup smoke", StringComparison.Ordinal), "起動エラーログに例外内容が残ること");
+    Assert(StartupErrorService.CreateUserMessage(new InvalidOperationException("startup smoke"), startupLogPath).Contains("起動エラーログ", StringComparison.Ordinal), "起動エラー表示にログ保存先が含まれること");
+
+    string blockedLogTarget = Path.Combine(testRoot, "blocked-log-target");
+    string fallbackLogRoot = Path.Combine(testRoot, "fallback-log-root");
+    File.WriteAllText(blockedLogTarget, "not a directory");
+    StartupErrorService fallbackStartupErrorService = new(fallbackLogRoot);
+    string? fallbackStartupLogPath = fallbackStartupErrorService.WriteStartupError(
+        new InvalidOperationException("fallback startup smoke"),
+        new StorageLocation { DataDirectory = blockedLogTarget });
+    Assert(fallbackStartupLogPath == Path.Combine(fallbackLogRoot, StartupErrorService.LogFileName), "登録内容と設定フォルダにログを書けない場合はアプリフォルダ相当へ保存されること");
 
     BinderGroup standardGroup = new()
     {
@@ -215,4 +258,29 @@ static void AssertThrowsFriendlyError(Action action, string expectedMessagePart,
     }
 
     throw new InvalidOperationException($"テスト失敗: {message}");
+}
+
+static void RunStaTest(Action action)
+{
+    Exception? caughtException = null;
+    Thread thread = new(() =>
+    {
+        try
+        {
+            action();
+        }
+        catch (Exception ex)
+        {
+            caughtException = ex;
+        }
+    });
+
+    thread.SetApartmentState(ApartmentState.STA);
+    thread.Start();
+    thread.Join();
+
+    if (caughtException is not null)
+    {
+        throw new InvalidOperationException("テスト失敗: STA 初期化処理で例外が発生しました。", caughtException);
+    }
 }
