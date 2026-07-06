@@ -34,9 +34,60 @@ try
     settings.AutoBackupEnabled = false;
     StoreService standardStoreService = new(standardLocation, new BackupService());
     standardStoreService.SaveSettings(settings);
+    Assert(File.Exists(standardLocation.SettingsFilePath), "標準モードで settings.json が作成されること");
+
+    AppSettings loadedStandardSettings = standardStoreService.LoadSettings();
+    Assert(loadedStandardSettings.FirstRunCompleted, "標準モードで FirstRunCompleted が保存・読み込みされること");
+    Assert(loadedStandardSettings.StorageMode == StorageMode.Standard, "標準モードの設定が読み戻されること");
+
+    standardStoreService.EnsureStoreFile();
+    Assert(File.Exists(standardLocation.StoreFilePath), "標準モードで contextbinder.store.json が作成されること");
+    Assert(standardStoreService.LoadStore().Groups.Count == 0, "標準モードで空の登録内容を読み込めること");
+
+    BinderGroup standardGroup = new()
+    {
+        Name = "標準モード確認",
+        SortOrder = 0
+    };
+
+    ContextBinderStore standardStore = new()
+    {
+        Groups = [standardGroup]
+    };
+
+    standardStoreService.SaveStore(standardStore, loadedStandardSettings);
+    Assert(standardStoreService.LoadStore().Groups.Count == 1, "標準モードで登録内容を保存・読み込みできること");
 
     StorageLocation? resolvedStandardLocation = standardLocationService.ResolveExistingLocation();
     Assert(resolvedStandardLocation?.Mode == StorageMode.Standard, "標準設定がある場合は標準モードで起動すること");
+
+    string corruptStandardRoot = Path.Combine(testRoot, "corrupt-standard");
+    string corruptAppRoot = Path.Combine(testRoot, "corrupt-app");
+    Directory.CreateDirectory(corruptAppRoot);
+    StorageLocationService corruptLocationService = new([], corruptAppRoot, corruptStandardRoot);
+    StorageLocation corruptStandardLocation = corruptLocationService.InitializeFirstRun(StorageMode.Standard);
+    File.WriteAllText(corruptStandardLocation.SettingsFilePath, string.Empty);
+    StoreService corruptStoreService = new(corruptStandardLocation, new BackupService());
+    AssertThrowsFriendlyError(
+        () => corruptStoreService.LoadSettings(),
+        "settings.json",
+        "空の settings.json は分かりやすいエラーになること");
+
+    File.WriteAllText(corruptStandardLocation.StoreFilePath, "{");
+    AssertThrowsFriendlyError(
+        () => corruptStoreService.LoadStore(),
+        "contextbinder.store.json",
+        "壊れた contextbinder.store.json は分かりやすいエラーになること");
+
+    string blockedStandardRoot = Path.Combine(testRoot, "blocked-standard");
+    string blockedAppRoot = Path.Combine(testRoot, "blocked-app");
+    Directory.CreateDirectory(blockedAppRoot);
+    File.WriteAllText(blockedStandardRoot, "not a directory");
+    StorageLocationService blockedLocationService = new([], blockedAppRoot, blockedStandardRoot);
+    AssertThrowsFriendlyError(
+        () => blockedLocationService.InitializeFirstRun(StorageMode.Standard),
+        "登録内容と設定",
+        "保存先に同名ファイルがある場合は分かりやすいエラーになること");
 
     string unusedPortableStandardRoot = Path.Combine(testRoot, "unused-standard-portable");
     StorageLocationService portableLocationService = new([], portableAppRoot, unusedPortableStandardRoot);
@@ -148,4 +199,20 @@ static void AssertRequiredDirectoriesExist(StorageLocation location)
     Assert(Directory.Exists(location.DataDirectory), "登録内容と設定フォルダが作成されること");
     Assert(Directory.Exists(location.BackupDirectory), "backups フォルダが作成されること");
     Assert(Directory.Exists(location.TrashDirectory), "trash フォルダが作成されること");
+}
+
+static void AssertThrowsFriendlyError(Action action, string expectedMessagePart, string message)
+{
+    try
+    {
+        action();
+    }
+    catch (InvalidOperationException ex)
+    {
+        Assert(ex.Message.Contains("登録内容と設定", StringComparison.Ordinal), message);
+        Assert(ex.Message.Contains(expectedMessagePart, StringComparison.Ordinal), message);
+        return;
+    }
+
+    throw new InvalidOperationException($"テスト失敗: {message}");
 }

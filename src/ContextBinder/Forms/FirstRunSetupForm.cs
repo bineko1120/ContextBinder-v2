@@ -64,7 +64,8 @@ public sealed class FirstRunSetupForm : Form
         _recommendedSetupRadio.Checked = true;
         _recommendedSetupRadio.CheckedChanged += (_, _) => UpdateStorageControls();
 
-        _customSetupRadio.Text = "カスタム設定を選ぶ";
+        // TODO: 表示設定や操作設定の詳細選択は、設定画面実装フェーズで追加する。
+        _customSetupRadio.Text = "保存場所を自分で選んで始める";
         _customSetupRadio.Location = new Point(16, 58);
         _customSetupRadio.Width = 300;
         _customSetupRadio.CheckedChanged += (_, _) => UpdateStorageControls();

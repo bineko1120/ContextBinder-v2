@@ -30,8 +30,7 @@ public sealed class StorageLocationService
     {
         _args = args ?? [];
         _applicationDirectory = Path.GetFullPath(applicationDirectory ?? AppContext.BaseDirectory);
-        _standardDataDirectory = Path.GetFullPath(standardDataDirectory
-            ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ContextBinder"));
+        _standardDataDirectory = ResolveStandardDataDirectory(standardDataDirectory);
     }
 
     public StorageLocation? ResolveExistingLocation()
@@ -92,7 +91,16 @@ public sealed class StorageLocationService
 
         if (mode == StorageMode.Portable)
         {
-            File.WriteAllText(GetPortableFlagPath(), "ContextBinder portable storage");
+            try
+            {
+                File.WriteAllText(GetPortableFlagPath(), "ContextBinder portable storage");
+            }
+            catch (Exception ex) when (IsStorageAccessException(ex))
+            {
+                throw new InvalidOperationException(
+                    "このアプリのフォルダに保存する設定を書き込めませんでした。アプリフォルダへの書き込み権限を確認してください。",
+                    ex);
+            }
         }
 
         if (mode == StorageMode.Custom)
@@ -105,9 +113,16 @@ public sealed class StorageLocationService
 
     public void EnsureDirectories(StorageLocation location)
     {
-        Directory.CreateDirectory(location.DataDirectory);
-        Directory.CreateDirectory(location.BackupDirectory);
-        Directory.CreateDirectory(location.TrashDirectory);
+        try
+        {
+            Directory.CreateDirectory(location.DataDirectory);
+            Directory.CreateDirectory(location.BackupDirectory);
+            Directory.CreateDirectory(location.TrashDirectory);
+        }
+        catch (Exception ex) when (IsStorageAccessException(ex))
+        {
+            throw new InvalidOperationException(CreateDirectoryPreparationMessage(location), ex);
+        }
     }
 
     public AppSettings CreateInitialSettings(StorageLocation location)
@@ -150,7 +165,7 @@ public sealed class StorageLocationService
                 _ => throw new InvalidOperationException("保存場所設定の種類が不正です。")
             };
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or InvalidOperationException)
         {
             throw new InvalidOperationException("保存場所設定を読み込めませんでした。", ex);
         }
@@ -158,14 +173,23 @@ public sealed class StorageLocationService
 
     private void WriteStorageMarker(StorageLocation location)
     {
-        StorageLocationMarker marker = new()
+        try
         {
-            Mode = location.Mode,
-            DataDirectory = location.DataDirectory
-        };
+            StorageLocationMarker marker = new()
+            {
+                Mode = location.Mode,
+                DataDirectory = location.DataDirectory
+            };
 
-        string json = JsonSerializer.Serialize(marker, JsonOptions);
-        File.WriteAllText(GetStorageMarkerPath(), json);
+            string json = JsonSerializer.Serialize(marker, JsonOptions);
+            File.WriteAllText(GetStorageMarkerPath(), json);
+        }
+        catch (Exception ex) when (IsStorageAccessException(ex))
+        {
+            throw new InvalidOperationException(
+                "保存場所の設定をアプリフォルダに保存できませんでした。別の保存場所を選ぶか、アプリフォルダへの書き込み権限を確認してください。",
+                ex);
+        }
     }
 
     private string GetStorageMarkerPath()
@@ -176,6 +200,39 @@ public sealed class StorageLocationService
     private string GetPortableFlagPath()
     {
         return Path.Combine(_applicationDirectory, PortableFlagFileName);
+    }
+
+    private static string ResolveStandardDataDirectory(string? standardDataDirectory)
+    {
+        if (!string.IsNullOrWhiteSpace(standardDataDirectory))
+        {
+            return Path.GetFullPath(standardDataDirectory);
+        }
+
+        string appDataDirectory = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        if (string.IsNullOrWhiteSpace(appDataDirectory))
+        {
+            throw new InvalidOperationException("通常の保存場所を取得できませんでした。Windowsのアプリ用フォルダを確認してください。");
+        }
+
+        return Path.GetFullPath(Path.Combine(appDataDirectory, "ContextBinder"));
+    }
+
+    private static string CreateDirectoryPreparationMessage(StorageLocation location)
+    {
+        string modeDescription = location.Mode switch
+        {
+            StorageMode.Portable => "このアプリのフォルダ",
+            StorageMode.Custom => "選択したフォルダ",
+            _ => "通常の場所"
+        };
+
+        return $"登録内容と設定の保存場所を準備できませんでした。\n保存方法: {modeDescription}\n保存先: {location.DataDirectory}";
+    }
+
+    private static bool IsStorageAccessException(Exception ex)
+    {
+        return ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException;
     }
 
     private sealed class StorageLocationMarker

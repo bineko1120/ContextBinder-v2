@@ -56,13 +56,14 @@ internal static class Program
 
                 StoreService storeService = new(location, new BackupService());
                 storeService.SaveSettings(storageLocationService.CreateInitialSettings(location));
+                storeService.EnsureStoreFile();
 
                 return location;
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
             {
                 MessageBox.Show(
-                    $"登録内容と設定の保存場所を準備できませんでした。\n\n{ex.Message}\n\n通常の場所に保存するか、別のフォルダを選んでください。",
+                    $"登録内容と設定の保存場所を準備できませんでした。\n\n{ex.Message}\n\n保存場所を変更するか、フォルダへの書き込み権限を確認してください。",
                     "保存場所の準備エラー",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
