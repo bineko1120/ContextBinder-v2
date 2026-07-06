@@ -1,7 +1,9 @@
 using ContextBinder.Models;
 
-namespace ContextBinder.Forms;
+namespace ContextBinder;
 
+// User-editable UI text values.
+// Keep layout sizing in UiLayoutSettings.cs and keep behavior/event logic in Forms/*.cs.
 internal static class UiTexts
 {
     internal readonly record struct TextPair(string Title, string Description);

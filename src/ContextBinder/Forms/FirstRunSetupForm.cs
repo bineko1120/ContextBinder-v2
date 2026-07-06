@@ -1,12 +1,13 @@
 using ContextBinder.Models;
 using ContextBinder.Services;
-using static ContextBinder.Forms.UiTexts.FirstRunSetup;
+using static ContextBinder.UiTexts.FirstRunSetup;
+using FirstRunLayout = ContextBinder.UiLayoutSettings.FirstRun;
 
 namespace ContextBinder.Forms;
 
-public sealed class FirstRunSetupForm : Form
+public sealed partial class FirstRunSetupForm : Form
 {
-    private const int ContentWidth = 760;
+    private const int ContentWidth = FirstRunLayout.ContentWidth;
     private const int LastStepIndex = 3;
 
     private readonly StorageLocationService _storageLocationService;
@@ -60,8 +61,8 @@ public sealed class FirstRunSetupForm : Form
         MaximizeBox = true;
         MinimizeBox = false;
         AutoScaleMode = AutoScaleMode.Dpi;
-        ClientSize = new Size(900, 760);
-        MinimumSize = new Size(860, 720);
+        ClientSize = new Size(FirstRunLayout.InitialWidth, FirstRunLayout.InitialHeight);
+        MinimumSize = new Size(FirstRunLayout.MinimumWidth, FirstRunLayout.MinimumHeight);
         Font = SystemFonts.MessageBoxFont;
 
         InitializeSetupControls();
@@ -99,11 +100,11 @@ public sealed class FirstRunSetupForm : Form
         _customStorageRadio.Text = CustomStorageLabel;
         _customStorageRadio.CheckedChanged += (_, _) => UpdateStoragePreview();
 
-        _customDirectoryTextBox.Width = 560;
+        _customDirectoryTextBox.Width = FirstRunLayout.CustomDirectoryTextBoxWidth;
         _customDirectoryTextBox.TextChanged += (_, _) => UpdateStoragePreview();
 
         _browseButton.Text = BrowseButton;
-        _browseButton.Width = 92;
+        _browseButton.Width = FirstRunLayout.BrowseButtonWidth;
         _browseButton.Click += BrowseButton_Click;
     }
 
@@ -159,13 +160,13 @@ public sealed class FirstRunSetupForm : Form
         TableLayoutPanel root = new()
         {
             Dock = DockStyle.Fill,
-            Padding = new Padding(16),
+            Padding = new Padding(FirstRunLayout.RootPadding),
             ColumnCount = 1,
             RowCount = 3
         };
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, FirstRunLayout.StepHeaderHeight));
         root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, FirstRunLayout.FooterButtonHeight));
 
         _stepLabel.Dock = DockStyle.Fill;
         _stepLabel.TextAlign = ContentAlignment.MiddleLeft;
@@ -173,7 +174,7 @@ public sealed class FirstRunSetupForm : Form
 
         _contentPanel.Dock = DockStyle.Fill;
         _contentPanel.BorderStyle = BorderStyle.FixedSingle;
-        _contentPanel.Padding = new Padding(14);
+        _contentPanel.Padding = new Padding(FirstRunLayout.ContentPadding);
 
         TableLayoutPanel buttonPanel = new()
         {
@@ -181,9 +182,9 @@ public sealed class FirstRunSetupForm : Form
             ColumnCount = 4
         };
         buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 96));
-        buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 96));
-        buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 96));
+        buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, FirstRunLayout.WizardButtonWidth));
+        buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, FirstRunLayout.WizardButtonWidth));
+        buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, FirstRunLayout.WizardButtonWidth));
 
         _backButton.Text = BackButton;
         _backButton.Dock = DockStyle.Fill;
@@ -192,7 +193,7 @@ public sealed class FirstRunSetupForm : Form
         _nextButton.Dock = DockStyle.Fill;
         _nextButton.Click += NextButton_Click;
 
-        _cancelButton.Text = UiTexts.FirstRunSetup.CancelButton;
+        _cancelButton.Text = ContextBinder.UiTexts.FirstRunSetup.CancelButton;
         _cancelButton.Dock = DockStyle.Fill;
         _cancelButton.DialogResult = DialogResult.Cancel;
 
@@ -277,10 +278,10 @@ public sealed class FirstRunSetupForm : Form
         panel.Controls.Add(customPanel);
 
         _storageDescriptionLabel.Width = ContentWidth;
-        _storageDescriptionLabel.Height = 64;
+        _storageDescriptionLabel.Height = FirstRunLayout.StorageDescriptionHeight;
         _storageDescriptionLabel.Margin = new Padding(0, 8, 0, 0);
         _storagePreviewLabel.Width = ContentWidth;
-        _storagePreviewLabel.Height = 48;
+        _storagePreviewLabel.Height = FirstRunLayout.StoragePreviewHeight;
         _storagePreviewLabel.BorderStyle = BorderStyle.FixedSingle;
         _storagePreviewLabel.Padding = new Padding(8);
         panel.Controls.Add(_storageDescriptionLabel);
@@ -434,7 +435,7 @@ public sealed class FirstRunSetupForm : Form
             Width = ContentWidth,
             Height = height,
             BorderStyle = BorderStyle.FixedSingle,
-            Padding = new Padding(10),
+            Padding = new Padding(FirstRunLayout.SettingCategoryPadding),
             Margin = new Padding(0, 0, 0, 10)
         };
 
@@ -512,7 +513,7 @@ public sealed class FirstRunSetupForm : Form
         Panel panel = new()
         {
             Width = ContentWidth - 24,
-            Height = 58,
+            Height = FirstRunLayout.SettingRowHeight,
             Margin = new Padding(0, 0, 0, 4)
         };
         checkBox.Location = new Point(0, 0);
@@ -536,7 +537,7 @@ public sealed class FirstRunSetupForm : Form
         Panel panel = new()
         {
             Width = ContentWidth - 24,
-            Height = 60,
+            Height = FirstRunLayout.ComboRowHeight,
             Margin = new Padding(0, 0, 0, 4)
         };
         Label label = new()
@@ -602,7 +603,7 @@ public sealed class FirstRunSetupForm : Form
 
         int bodyHeight = bodyPanel.Controls.Cast<Control>().Sum(control => control.Height + control.Margin.Vertical);
         bodyPanel.Height = bodyHeight;
-        sectionPanel.Height = Math.Max(76, 54 + bodyHeight);
+        sectionPanel.Height = Math.Max(FirstRunLayout.ConfirmationMinimumSectionHeight, 54 + bodyHeight);
         sectionPanel.Controls.Add(titleLabel);
         sectionPanel.Controls.Add(bodyPanel);
         return sectionPanel;

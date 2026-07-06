@@ -1,11 +1,12 @@
 using System.Runtime.InteropServices;
 using ContextBinder.Models;
 using ContextBinder.Services;
-using MainFormTexts = ContextBinder.Forms.UiTexts.MainForm;
+using MainFormLayout = ContextBinder.UiLayoutSettings.Main;
+using MainFormTexts = ContextBinder.UiTexts.MainForm;
 
 namespace ContextBinder.Forms;
 
-public sealed class MainForm : Form
+public sealed partial class MainForm : Form
 {
     private readonly FileTypeDetector _fileTypeDetector = new();
     private readonly ClipboardService _clipboardService = new();
@@ -50,8 +51,8 @@ public sealed class MainForm : Form
 
         Text = MainFormTexts.WindowTitle;
         AutoScaleMode = AutoScaleMode.Dpi;
-        MinimumSize = new Size(980, 700);
-        Size = new Size(1180, 780);
+        MinimumSize = new Size(MainFormLayout.MinimumWidth, MainFormLayout.MinimumHeight);
+        Size = new Size(MainFormLayout.InitialWidth, MainFormLayout.InitialHeight);
         StartPosition = FormStartPosition.CenterScreen;
         Font = SystemFonts.MessageBoxFont;
         AllowDrop = true;
@@ -97,13 +98,13 @@ public sealed class MainForm : Form
             Dock = DockStyle.Fill,
             ColumnCount = 3,
             RowCount = 2,
-            Padding = new Padding(10)
+            Padding = new Padding(MainFormLayout.RootPadding)
         };
-        root.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 190));
+        root.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, MainFormLayout.GroupColumnWidth));
         root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        root.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 185));
+        root.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, MainFormLayout.ActionColumnWidth));
         root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 90));
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, MainFormLayout.InitialBottomHeight));
         _bottomRowStyle = root.RowStyles[1];
 
         Panel groupPanel = new()
@@ -114,7 +115,7 @@ public sealed class MainForm : Form
         Label groupLabel = new()
         {
             Dock = DockStyle.Top,
-            Height = 24,
+            Height = MainFormLayout.GroupHeaderHeight,
             Text = MainFormTexts.GroupListTitle,
             TextAlign = ContentAlignment.MiddleLeft
         };
@@ -132,7 +133,7 @@ public sealed class MainForm : Form
         _itemGrid.BorderStyle = BorderStyle.FixedSingle;
         _itemGrid.MultiSelect = false;
         _itemGrid.ReadOnly = true;
-        _itemGrid.RowTemplate.Height = 36;
+        _itemGrid.RowTemplate.Height = MainFormLayout.GridRowHeight;
         _itemGrid.RowHeadersVisible = false;
         _itemGrid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
         _itemGrid.ContextMenuStrip = _itemContextMenu;
@@ -177,10 +178,10 @@ public sealed class MainForm : Form
         _bottomPanel.Dock = DockStyle.Fill;
         _bottomPanel.ColumnCount = 1;
         _bottomPanel.RowCount = 3;
-        _bottomPanel.Padding = new Padding(0, 8, 0, 0);
-        _bottomPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
-        _bottomPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 124));
-        _bottomPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 148));
+        _bottomPanel.Padding = new Padding(0, MainFormLayout.BottomTopPadding, 0, 0);
+        _bottomPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, MainFormLayout.ToggleRowHeight));
+        _bottomPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, MainFormLayout.BeginnerHintsHeight));
+        _bottomPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, MainFormLayout.IconMeaningHeight));
 
         FlowLayoutPanel togglePanel = new()
         {
@@ -189,14 +190,14 @@ public sealed class MainForm : Form
             WrapContents = true
         };
         _showBeginnerHintsCheckBox.Text = MainFormTexts.ShowBeginnerHintsToggle;
-        _showBeginnerHintsCheckBox.Width = 170;
+        _showBeginnerHintsCheckBox.Width = MainFormLayout.ToggleCheckBoxWidth;
         _showBeginnerHintsCheckBox.CheckedChanged += DisplayToggleCheckBox_CheckedChanged;
         _showIconLegendCheckBox.Text = MainFormTexts.ShowIconMeaningToggle;
-        _showIconLegendCheckBox.Width = 170;
+        _showIconLegendCheckBox.Width = MainFormLayout.ToggleCheckBoxWidth;
         _showIconLegendCheckBox.CheckedChanged += DisplayToggleCheckBox_CheckedChanged;
         _statusLabel.AutoSize = false;
-        _statusLabel.Width = 520;
-        _statusLabel.Height = 26;
+        _statusLabel.Width = MainFormLayout.StatusLabelWidth;
+        _statusLabel.Height = MainFormLayout.StatusLabelHeight;
         _statusLabel.TextAlign = ContentAlignment.MiddleLeft;
         _statusLabel.AutoEllipsis = true;
         togglePanel.Controls.Add(_showBeginnerHintsCheckBox);
@@ -212,7 +213,7 @@ public sealed class MainForm : Form
             ColumnCount = 1,
             RowCount = 2
         };
-        hintsLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));
+        hintsLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, MainFormLayout.BottomTitleHeight));
         hintsLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         Label hintsTitleLabel = CreateBottomTitleLabel(MainFormTexts.BeginnerHintsTitle);
         _beginnerHintsLabel.Dock = DockStyle.Fill;
@@ -231,7 +232,7 @@ public sealed class MainForm : Form
             ColumnCount = 1,
             RowCount = 2
         };
-        iconLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));
+        iconLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, MainFormLayout.BottomTitleHeight));
         iconLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         Label iconTitleLabel = CreateBottomTitleLabel(MainFormTexts.IconMeaningTitle);
         _iconLegendFlow.Dock = DockStyle.Fill;
@@ -251,7 +252,7 @@ public sealed class MainForm : Form
     private void BuildIconLegend()
     {
         _iconLegendFlow.Controls.Clear();
-        foreach (UiTexts.IconMeaningText text in MainFormTexts.IconMeanings)
+        foreach (ContextBinder.UiTexts.IconMeaningText text in MainFormTexts.IconMeanings)
         {
             AddLegendItem(text.Type, text.Title, text.Description);
         }
@@ -261,22 +262,22 @@ public sealed class MainForm : Form
     {
         Panel itemPanel = new()
         {
-            Width = 250,
-            Height = 50,
+            Width = MainFormLayout.IconMeaningItemWidth,
+            Height = MainFormLayout.IconMeaningItemHeight,
             Margin = new Padding(0, 0, 8, 6)
         };
         PictureBox pictureBox = new()
         {
             Image = _iconAssetService.GetItemIcon(type),
             SizeMode = PictureBoxSizeMode.Zoom,
-            Location = new Point(0, 7),
-            Size = new Size(30, 30)
+            Location = new Point(0, (MainFormLayout.IconMeaningItemHeight - MainFormLayout.IconMeaningIconSize) / 2),
+            Size = new Size(MainFormLayout.IconMeaningIconSize, MainFormLayout.IconMeaningIconSize)
         };
         Label label = new()
         {
             Text = $"{title}: {description}",
-            Location = new Point(36, 2),
-            Size = new Size(208, 44),
+            Location = new Point(MainFormLayout.IconMeaningTextOffsetX, 2),
+            Size = new Size(MainFormLayout.IconMeaningItemWidth - MainFormLayout.IconMeaningTextOffsetX - 6, MainFormLayout.IconMeaningItemHeight - 6),
             TextAlign = ContentAlignment.MiddleLeft
         };
         itemPanel.Controls.Add(pictureBox);
@@ -343,14 +344,14 @@ public sealed class MainForm : Form
         });
     }
 
-    private Button CreateActionButton(UiTexts.ActionText actionText, EventHandler clickHandler)
+    private Button CreateActionButton(ContextBinder.UiTexts.ActionText actionText, EventHandler clickHandler)
     {
         Button button = new()
         {
             Text = actionText.Label,
-            Width = 165,
-            Height = 31,
-            Margin = new Padding(0, 0, 0, 7)
+            Width = MainFormLayout.ActionButtonWidth,
+            Height = MainFormLayout.ActionButtonHeight,
+            Margin = new Padding(0, 0, 0, MainFormLayout.ActionButtonBottomMargin)
         };
         button.Click += clickHandler;
         _toolTip.SetToolTip(button, actionText.ToolTip);
@@ -459,9 +460,9 @@ public sealed class MainForm : Form
             return;
         }
 
-        int hintsHeight = _settings.ShowBeginnerHints ? 124 : 0;
-        int iconMeaningHeight = _settings.ShowIconLegend ? 148 : 0;
-        int height = 44;
+        int hintsHeight = _settings.ShowBeginnerHints ? MainFormLayout.BeginnerHintsHeight : 0;
+        int iconMeaningHeight = _settings.ShowIconLegend ? MainFormLayout.IconMeaningHeight : 0;
+        int height = MainFormLayout.ToggleRowHeight + MainFormLayout.BottomTopPadding + 2;
         _bottomPanel.RowStyles[1].Height = hintsHeight;
         _bottomPanel.RowStyles[2].Height = iconMeaningHeight;
         if (_settings.ShowBeginnerHints)
