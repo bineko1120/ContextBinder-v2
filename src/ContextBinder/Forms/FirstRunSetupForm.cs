@@ -1,5 +1,6 @@
 using ContextBinder.Models;
 using ContextBinder.Services;
+using static ContextBinder.Forms.UiTexts.FirstRunSetup;
 
 namespace ContextBinder.Forms;
 
@@ -53,7 +54,7 @@ public sealed class FirstRunSetupForm : Form
     {
         _storageLocationService = storageLocationService ?? new StorageLocationService();
 
-        Text = "ContextBinder 初回セットアップ";
+        Text = WindowTitle;
         StartPosition = FormStartPosition.CenterScreen;
         FormBorderStyle = FormBorderStyle.Sizable;
         MaximizeBox = true;
@@ -78,30 +79,30 @@ public sealed class FirstRunSetupForm : Form
 
     private void InitializeSetupControls()
     {
-        _recommendedSetupRadio.Text = "初心者おすすめ設定で始める";
+        _recommendedSetupRadio.Text = RecommendedSetupLabel;
         _recommendedSetupRadio.Checked = true;
         _recommendedSetupRadio.CheckedChanged += (_, _) => RenderCurrentStep();
 
-        _customSetupRadio.Text = "カスタム設定を選ぶ";
+        _customSetupRadio.Text = CustomSetupLabel;
         _customSetupRadio.CheckedChanged += (_, _) => RenderCurrentStep();
     }
 
     private void InitializeStorageControls()
     {
-        _standardStorageRadio.Text = "通常の場所に保存（おすすめ）";
+        _standardStorageRadio.Text = StandardStorageLabel;
         _standardStorageRadio.Checked = true;
         _standardStorageRadio.CheckedChanged += (_, _) => UpdateStoragePreview();
 
-        _portableStorageRadio.Text = "このアプリのフォルダに保存";
+        _portableStorageRadio.Text = PortableStorageLabel;
         _portableStorageRadio.CheckedChanged += (_, _) => UpdateStoragePreview();
 
-        _customStorageRadio.Text = "自分で選んだ場所に保存";
+        _customStorageRadio.Text = CustomStorageLabel;
         _customStorageRadio.CheckedChanged += (_, _) => UpdateStoragePreview();
 
         _customDirectoryTextBox.Width = 560;
         _customDirectoryTextBox.TextChanged += (_, _) => UpdateStoragePreview();
 
-        _browseButton.Text = "参照...";
+        _browseButton.Text = BrowseButton;
         _browseButton.Width = 92;
         _browseButton.Click += BrowseButton_Click;
     }
@@ -110,40 +111,35 @@ public sealed class FirstRunSetupForm : Form
     {
         _typeDisplayModeComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
         _typeDisplayModeComboBox.Width = 180;
-        _typeDisplayModeComboBox.Items.AddRange([
-            "アイコン＋文字",
-            "アイコンのみ",
-            "文字のみ",
-            "非表示（非推奨）"
-        ]);
+        _typeDisplayModeComboBox.Items.AddRange(TypeDisplayModeItems);
 
         _maxBackupCountNumeric.Minimum = 1;
         _maxBackupCountNumeric.Maximum = 100;
         _maxBackupCountNumeric.Width = 80;
 
         LoadSettingsIntoControls(AppSettingsFactory.CreateRecommended());
-        _editRecommendedSettingsCheckBox.Text = "おすすめ設定を少し変更する";
+        _editRecommendedSettingsCheckBox.Text = EditRecommendedSettings;
         _editRecommendedSettingsCheckBox.CheckedChanged += (_, _) => UpdateSettingsEditability();
 
         RegisterSettingControl(_typeDisplayModeComboBox);
-        RegisterSettingControl(_showBeginnerHintsCheckBox, "初心者向け説明を表示");
-        RegisterSettingControl(_showIconLegendCheckBox, "アイコンの意味を表示");
-        RegisterSettingControl(_showOperationStatusCheckBox, "操作結果ステータスを表示");
-        RegisterSettingControl(_confirmTitleOnDropAddCheckBox, "D&D追加時にタイトルを確認");
-        RegisterSettingControl(_focusExistingItemOnDuplicateCheckBox, "重複時に既存項目へジャンプ");
-        RegisterSettingControl(_enableGroupDropModifierShortcutsCheckBox, "Ctrl/Shiftドロップショートカット");
-        RegisterSettingControl(_confirmGroupDropCopyMoveCheckBox, "通常グループドロップ時に確認");
-        RegisterSettingControl(_enableItemDragReorderCheckBox, "項目のD&D並び替え");
-        RegisterSettingControl(_enableExternalFileDropOutCheckBox, "ファイル/画像/動画/フォルダを外部D&Dで渡す");
-        RegisterSettingControl(_enableExternalUrlTextDragOutCheckBox, "URLを外部D&Dでテキストとして渡す");
-        RegisterSettingControl(_enableExternalTemplateTextDragOutCheckBox, "テンプレート本文を外部D&Dで渡す");
-        RegisterSettingControl(_minimizeToTrayOnCloseCheckBox, "閉じるボタンでタスクトレイに格納");
-        RegisterSettingControl(_enableContextMenuDetailsCheckBox, "右クリック詳細操作を有効にする");
-        RegisterSettingControl(_autoBackupEnabledCheckBox, "自動バックアップ");
+        RegisterSettingControl(_showBeginnerHintsCheckBox, ShowBeginnerHintsLabel);
+        RegisterSettingControl(_showIconLegendCheckBox, ShowIconMeaningLabel);
+        RegisterSettingControl(_showOperationStatusCheckBox, ShowOperationStatusLabel);
+        RegisterSettingControl(_confirmTitleOnDropAddCheckBox, ConfirmTitleOnDropAddLabel);
+        RegisterSettingControl(_focusExistingItemOnDuplicateCheckBox, FocusExistingItemOnDuplicateLabel);
+        RegisterSettingControl(_enableGroupDropModifierShortcutsCheckBox, EnableGroupDropModifierShortcutsLabel);
+        RegisterSettingControl(_confirmGroupDropCopyMoveCheckBox, ConfirmGroupDropCopyMoveLabel);
+        RegisterSettingControl(_enableItemDragReorderCheckBox, EnableItemDragReorderLabel);
+        RegisterSettingControl(_enableExternalFileDropOutCheckBox, EnableExternalFileDropOutLabel);
+        RegisterSettingControl(_enableExternalUrlTextDragOutCheckBox, EnableExternalUrlTextDragOutLabel);
+        RegisterSettingControl(_enableExternalTemplateTextDragOutCheckBox, EnableExternalTemplateTextDragOutLabel);
+        RegisterSettingControl(_minimizeToTrayOnCloseCheckBox, MinimizeToTrayOnCloseLabel);
+        RegisterSettingControl(_enableContextMenuDetailsCheckBox, EnableContextMenuDetailsLabel);
+        RegisterSettingControl(_autoBackupEnabledCheckBox, AutoBackupEnabledLabel);
         RegisterSettingControl(_maxBackupCountNumeric);
-        RegisterSettingControl(_confirmBeforeDeleteCheckBox, "削除前に確認");
-        RegisterSettingControl(_moveDeletedItemsToTrashCheckBox, "削除時にアプリ内ごみ箱へ移動");
-        RegisterSettingControl(_searchTemplateBodyCheckBox, "テンプレート本文も検索対象にする");
+        RegisterSettingControl(_confirmBeforeDeleteCheckBox, ConfirmBeforeDeleteLabel);
+        RegisterSettingControl(_moveDeletedItemsToTrashCheckBox, MoveDeletedItemsToTrashLabel);
+        RegisterSettingControl(_searchTemplateBodyCheckBox, SearchTemplateBodyLabel);
     }
 
     private void RegisterSettingControl(Control control)
@@ -189,14 +185,14 @@ public sealed class FirstRunSetupForm : Form
         buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 96));
         buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 96));
 
-        _backButton.Text = "戻る";
+        _backButton.Text = BackButton;
         _backButton.Dock = DockStyle.Fill;
         _backButton.Click += (_, _) => MoveStep(-1);
 
         _nextButton.Dock = DockStyle.Fill;
         _nextButton.Click += NextButton_Click;
 
-        _cancelButton.Text = "キャンセル";
+        _cancelButton.Text = UiTexts.FirstRunSetup.CancelButton;
         _cancelButton.Dock = DockStyle.Fill;
         _cancelButton.DialogResult = DialogResult.Cancel;
 
@@ -218,7 +214,7 @@ public sealed class FirstRunSetupForm : Form
         _contentPanel.Controls.Clear();
         _stepLabel.Text = CreateStepText();
         _backButton.Enabled = _currentStep > 0;
-        _nextButton.Text = _currentStep == LastStepIndex ? "開始" : "次へ";
+        _nextButton.Text = _currentStep == LastStepIndex ? StartButton : NextButton;
 
         Control page = _currentStep switch
         {
@@ -234,42 +230,21 @@ public sealed class FirstRunSetupForm : Form
 
     private string CreateStepText()
     {
-        string[] steps = [
-            "1. 始め方",
-            "2. 保存場所",
-            "3. 使いやすさ設定",
-            "4. 確認"
-        ];
-
-        return string.Join("  →  ", steps.Select((step, index) => index == _currentStep ? $"【{step}】" : step));
+        return string.Join("  →  ", StepLabels.Select((step, index) => index == _currentStep ? $"【{step}】" : step));
     }
 
     private Control BuildStartModePage()
     {
         FlowLayoutPanel panel = CreateVerticalPanel();
-        panel.Controls.Add(CreateHeading("ContextBinderへようこそ"));
-        panel.Controls.Add(CreateParagraph("""
-このツールは、ファイル・フォルダ・URL・テンプレート文を
-グループごとにまとめて、すぐ開く/コピーできるツールです。
-
-まずは保存場所と使いやすさ設定を選びます。
-"""));
+        panel.Controls.Add(CreateHeading(WelcomeHeading));
+        panel.Controls.Add(CreateParagraph(WelcomeDescription));
         panel.Controls.Add(CreateOptionPanel(
             _recommendedSetupRadio,
-            """
-迷った場合はこちらを選んでください。
-見やすさと安全性を優先した設定で始めます。
-次の画面で保存場所を選べます。
-おすすめ設定の内容は後で確認できます。
-""",
+            RecommendedSetupDescription,
             118));
         panel.Controls.Add(CreateOptionPanel(
             _customSetupRadio,
-            """
-表示、ドラッグ＆ドロップ、削除確認、バックアップなどを自分で選びます。
-ある程度使い方を決めたい人向けです。
-保存場所も次の画面で選べます。
-""",
+            CustomSetupDescription,
             100));
 
         return panel;
@@ -278,30 +253,16 @@ public sealed class FirstRunSetupForm : Form
     private Control BuildStoragePage()
     {
         FlowLayoutPanel panel = CreateVerticalPanel();
-        panel.Controls.Add(CreateHeading("登録内容と設定の保存場所を選んでください"));
+        panel.Controls.Add(CreateHeading(StorageHeading));
         panel.Controls.Add(CreateStorageOptionPanel(
             _standardStorageRadio,
-            """
-Windowsの標準的なアプリ用フォルダに、登録内容と設定を保存します。
-迷った場合はこれを選んでください。
-アプリ本体のフォルダを移動しても、登録内容と設定は維持されます。
-"""));
+            StandardStorageDescription));
         panel.Controls.Add(CreateStorageOptionPanel(
             _portableStorageRadio,
-            """
-アプリ本体と同じ場所に ContextBinder_Data フォルダを作り、登録内容と設定を保存します。
-フォルダごとバックアップ・移動したい人向けです。
-Program Files など書き込み権限が厳しい場所では失敗することがあります。
-AppDataには保存しません。
-"""));
+            PortableStorageDescription));
         Panel customPanel = CreateStorageOptionPanel(
             _customStorageRadio,
-            """
-自分で選んだフォルダに登録内容と設定を保存します。
-OneDrive、別ドライブ、外部ドライブなどを使いたい人向けです。
-同期中、権限不足、外部ドライブ未接続には注意してください。
-AppDataには保存しません。
-""",
+            CustomStorageDescription,
             150);
         FlowLayoutPanel customPathPanel = new()
         {
@@ -333,10 +294,10 @@ AppDataには保存しません。
         FlowLayoutPanel panel = CreateVerticalPanel();
         bool customSetup = _customSetupRadio.Checked;
 
-        panel.Controls.Add(CreateHeading(customSetup ? "使いやすさ設定を選んでください" : "おすすめ設定の内容を確認してください"));
+        panel.Controls.Add(CreateHeading(customSetup ? SettingsCustomHeading : SettingsRecommendedHeading));
         panel.Controls.Add(CreateParagraph(customSetup
-            ? "画面の表示、ドラッグ＆ドロップ、削除確認などを自分の使い方に合わせて選べます。"
-            : "初心者おすすめ設定は、見やすさと安全性を優先した初期値です。内容を確認し、必要なら少しだけ変更できます。"));
+            ? SettingsCustomDescription
+            : SettingsRecommendedDescription));
 
         if (!customSetup)
         {
@@ -345,64 +306,64 @@ AppDataには保存しません。
         }
 
         panel.Controls.Add(CreateSettingsCategoryPanel(
-            "表示",
-            "一覧の見え方と、画面下に出す説明を選びます。",
+            DisplaySettingsCategory.Title,
+            DisplaySettingsCategory.Description,
             new Control[]
             {
-                CreateComboRow("種類表示", _typeDisplayModeComboBox, "一覧で「種類」をどう表示するか選べます。非表示は分かりづらくなるため非推奨です。"),
-                CreateSettingRow(_showBeginnerHintsCheckBox, "画面下に、操作の意味を分かりやすく表示します。"),
-                CreateSettingRow(_showIconLegendCheckBox, "猫アイコンが何を表しているか表示します。"),
-                CreateSettingRow(_showOperationStatusCheckBox, "読み込みや保存などの結果を画面下に表示します。")
+                CreateComboRow(TypeDisplayModeLabel, _typeDisplayModeComboBox, TypeDisplayModeDescription),
+                CreateSettingRow(_showBeginnerHintsCheckBox, ShowBeginnerHintsDescription),
+                CreateSettingRow(_showIconLegendCheckBox, ShowIconMeaningDescription),
+                CreateSettingRow(_showOperationStatusCheckBox, ShowOperationStatusDescription)
             }));
 
         panel.Controls.Add(CreateSettingsCategoryPanel(
-            "ドラッグ＆ドロップ",
-            "ファイルやURLを登録するとき、または他のアプリへ渡すときの動きを選びます。",
+            DragDropSettingsCategory.Title,
+            DragDropSettingsCategory.Description,
             new Control[]
             {
-                CreateSettingRow(_confirmTitleOnDropAddCheckBox, "登録時にタイトルを確認したい場合に使います。"),
-                CreateSettingRow(_focusExistingItemOnDuplicateCheckBox, "同じ内容がすでにある場合、その項目を見つけやすくします。"),
-                CreateSettingRow(_enableGroupDropModifierShortcutsCheckBox, "グループへドラッグしたとき、Ctrl/Shiftキーでコピー・移動を切り替えられます。"),
-                CreateSettingRow(_confirmGroupDropCopyMoveCheckBox, "グループへドロップしたとき、コピーか移動か迷わないよう確認します。"),
-                CreateSettingRow(_enableItemDragReorderCheckBox, "一覧の順番を手で入れ替えられます。"),
-                CreateSettingRow(_enableExternalFileDropOutCheckBox, "ファイル、画像、動画、フォルダーを他のアプリへドラッグして使いたい人向けです。"),
-                CreateSettingRow(_enableExternalUrlTextDragOutCheckBox, "URLを他のアプリへドラッグして使いたい人向けです。"),
-                CreateSettingRow(_enableExternalTemplateTextDragOutCheckBox, "テンプレート文を他のアプリへドラッグして使いたい人向けです。")
+                CreateSettingRow(_confirmTitleOnDropAddCheckBox, ConfirmTitleOnDropAddDescription),
+                CreateSettingRow(_focusExistingItemOnDuplicateCheckBox, FocusExistingItemOnDuplicateDescription),
+                CreateSettingRow(_enableGroupDropModifierShortcutsCheckBox, EnableGroupDropModifierShortcutsDescription),
+                CreateSettingRow(_confirmGroupDropCopyMoveCheckBox, ConfirmGroupDropCopyMoveDescription),
+                CreateSettingRow(_enableItemDragReorderCheckBox, EnableItemDragReorderDescription),
+                CreateSettingRow(_enableExternalFileDropOutCheckBox, EnableExternalFileDropOutDescription),
+                CreateSettingRow(_enableExternalUrlTextDragOutCheckBox, EnableExternalUrlTextDragOutDescription),
+                CreateSettingRow(_enableExternalTemplateTextDragOutCheckBox, EnableExternalTemplateTextDragOutDescription)
             }));
 
         panel.Controls.Add(CreateSettingsCategoryPanel(
-            "閉じるときの動作",
-            "アプリを閉じたとき、完全終了するか右下にしまうかを選びます。",
+            CloseBehaviorSettingsCategory.Title,
+            CloseBehaviorSettingsCategory.Description,
             new Control[]
             {
-                CreateSettingRow(_minimizeToTrayOnCloseCheckBox, "完全終了せず、タスクトレイに格納します。")
+                CreateSettingRow(_minimizeToTrayOnCloseCheckBox, MinimizeToTrayOnCloseDescription)
             }));
 
         panel.Controls.Add(CreateSettingsCategoryPanel(
-            "右クリックの便利機能",
-            "項目を右クリックしたときに使える操作を増やします。",
+            ContextMenuSettingsCategory.Title,
+            ContextMenuSettingsCategory.Description,
             new Control[]
             {
-                CreateSettingRow(_enableContextMenuDetailsCheckBox, "フォルダを開く、詳細を確認するなどの操作を追加します。")
+                CreateSettingRow(_enableContextMenuDetailsCheckBox, EnableContextMenuDetailsDescription)
             }));
 
         panel.Controls.Add(CreateSettingsCategoryPanel(
-            "バックアップと削除",
-            "登録内容と設定を守り、間違って消しにくくするための設定です。",
+            BackupDeleteSettingsCategory.Title,
+            BackupDeleteSettingsCategory.Description,
             new Control[]
             {
-                CreateSettingRow(_autoBackupEnabledCheckBox, "登録内容と設定を自動でバックアップします。"),
-                CreateComboRow("バックアップ保存数", _maxBackupCountNumeric, "残しておくバックアップの数です。初期値は20件です。"),
-                CreateSettingRow(_confirmBeforeDeleteCheckBox, "削除前に確認して、間違って消しにくくします。"),
-                CreateSettingRow(_moveDeletedItemsToTrashCheckBox, "すぐ完全削除せず、アプリ内のごみ箱であとから見直せます。")
+                CreateSettingRow(_autoBackupEnabledCheckBox, AutoBackupEnabledDescription),
+                CreateComboRow(MaxBackupCountLabel, _maxBackupCountNumeric, MaxBackupCountDescription),
+                CreateSettingRow(_confirmBeforeDeleteCheckBox, ConfirmBeforeDeleteDescription),
+                CreateSettingRow(_moveDeletedItemsToTrashCheckBox, MoveDeletedItemsToTrashDescription)
             }));
 
         panel.Controls.Add(CreateSettingsCategoryPanel(
-            "検索",
-            "項目を探すとき、どこまで検索対象にするかを選びます。",
+            SearchSettingsCategory.Title,
+            SearchSettingsCategory.Description,
             new Control[]
             {
-                CreateSettingRow(_searchTemplateBodyCheckBox, "テンプレート文の中身も検索対象にします。")
+                CreateSettingRow(_searchTemplateBodyCheckBox, SearchTemplateBodyDescription)
             }));
 
         UpdateSettingsEditability();
@@ -412,37 +373,21 @@ AppDataには保存しません。
     private Control BuildConfirmationPage()
     {
         FlowLayoutPanel panel = CreateVerticalPanel();
-        panel.Controls.Add(CreateHeading("確認して開始"));
-        panel.Controls.Add(CreateParagraph("選んだ内容を確認してください。「開始」を押すと、登録内容と設定の保存先を作成してContextBinderを起動します。"));
+        panel.Controls.Add(CreateHeading(ConfirmationHeading));
+        panel.Controls.Add(CreateParagraph(ConfirmationDescription));
 
         AppSettings settings = CreateSettingsFromControls();
-        panel.Controls.Add(CreateConfirmationSection("始め方", [
-            _customSetupRadio.Checked ? "カスタム設定" : "初心者おすすめ設定"
+        panel.Controls.Add(CreateConfirmationSection(StartModeConfirmationTitle, [
+            _customSetupRadio.Checked ? CustomSetupSummary : RecommendedSetupSummary
         ]));
-        panel.Controls.Add(CreateConfirmationSection("保存場所", [
+        panel.Controls.Add(CreateConfirmationSection(StorageConfirmationTitle, [
             GetStorageModeDisplayName(GetSelectedStorageMode()),
             CreateStoragePreviewText()
         ]));
-        panel.Controls.Add(CreateConfirmationSection("主な設定", BuildMainSettingsSummary(settings)));
-        panel.Controls.Add(CreateConfirmationSection("作成されるもの", [
-            "・contextbinder.store.json",
-            "・settings.json",
-            "・backups",
-            "・trash"
-        ]));
-        panel.Controls.Add(CreateConfirmationSection("保存されるもの", [
-            "・登録したファイル、フォルダ、URLの参照先",
-            "・登録したテンプレート文",
-            "・グループ名と並び順",
-            "・表示設定や操作設定",
-            "・自動バックアップ",
-            "・ごみ箱、削除履歴"
-        ]));
-        panel.Controls.Add(CreateConfirmationSection("保存されないもの", [
-            "・登録元のファイルそのもの",
-            "・登録元の画像や動画そのもの",
-            "・登録元のフォルダの中身"
-        ]));
+        panel.Controls.Add(CreateConfirmationSection(MainSettingsConfirmationTitle, BuildMainSettingsSummary(settings)));
+        panel.Controls.Add(CreateConfirmationSection(CreatedItemsConfirmationTitle, CreatedItems));
+        panel.Controls.Add(CreateConfirmationSection(SavedItemsConfirmationTitle, SavedItems));
+        panel.Controls.Add(CreateConfirmationSection(NotSavedItemsConfirmationTitle, NotSavedItems));
         return panel;
     }
 
@@ -682,20 +627,20 @@ AppDataには保存しません。
 
         string description = SelectedStorageMode switch
         {
-            StorageMode.Portable => "このアプリのフォルダに登録内容と設定を保存します。AppDataには保存しません。",
-            StorageMode.Custom => "自分で選んだフォルダに登録内容と設定を保存します。AppDataには保存しません。",
-            _ => "Windowsの標準的なアプリ用フォルダに登録内容と設定を保存します。"
+            StorageMode.Portable => PortableStorageCurrentDescription,
+            StorageMode.Custom => CustomStorageCurrentDescription,
+            _ => StandardStorageCurrentDescription
         };
 
         _storageDescriptionLabel.Text = description;
-        _storagePreviewLabel.Text = $"保存先プレビュー: {CreateStoragePreviewText()}";
+        _storagePreviewLabel.Text = $"{StoragePreviewPrefix}: {CreateStoragePreviewText()}";
     }
 
     private string CreateStoragePreviewText()
     {
         if (_customStorageRadio.Checked && string.IsNullOrWhiteSpace(_customDirectoryTextBox.Text))
         {
-            return "未選択";
+            return CustomStorageNotSelected;
         }
 
         try
@@ -775,7 +720,7 @@ AppDataには保存しません。
     {
         using FolderBrowserDialog dialog = new()
         {
-            Description = "登録内容と設定を保存するフォルダを選んでください。",
+            Description = CustomFolderDialogDescription,
             UseDescriptionForTitle = true
         };
 
@@ -814,7 +759,7 @@ AppDataには保存しません。
     {
         if (_currentStep == 1 && _customStorageRadio.Checked && string.IsNullOrWhiteSpace(_customDirectoryTextBox.Text))
         {
-            MessageBox.Show(this, "自分で選んだ場所に保存する場合は、保存するフォルダを選んでください。", "入力確認", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(this, CustomStorageRequiredMessage, ValidationDialogTitle, MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return false;
         }
 
@@ -822,8 +767,8 @@ AppDataには保存しません。
         {
             DialogResult result = MessageBox.Show(
                 this,
-                "種類表示を非表示にすると、項目の種類が分かりにくくなります。この設定で進みますか？",
-                "種類表示の確認",
+                TypeDisplayHiddenWarningMessage,
+                TypeDisplayHiddenWarningTitle,
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Warning);
             return result == DialogResult.Yes;
@@ -846,63 +791,5 @@ AppDataには保存しません。
         }
 
         return _customStorageRadio.Checked ? StorageMode.Custom : StorageMode.Standard;
-    }
-
-    private static string[] BuildMainSettingsSummary(AppSettings settings)
-    {
-        return
-        [
-            $"・種類表示: {GetTypeDisplayModeDisplayName(settings.TypeDisplayMode)}",
-            $"・初心者向け説明: {ShowOrHide(settings.ShowBeginnerHints)}",
-            $"・アイコンの意味: {ShowOrHide(settings.ShowIconLegend)}",
-            $"・操作結果ステータス: {ShowOrHide(settings.ShowOperationStatus)}",
-            $"・追加時にタイトル確認: {DoOrNot(settings.ConfirmTitleOnDropAdd)}",
-            $"・重複時に既存項目へ移動: {DoOrNot(settings.FocusExistingItemOnDuplicate)}",
-            $"・Ctrl/Shiftキーでコピー・移動を切り替え: {UseOrNot(settings.EnableGroupDropModifierShortcuts)}",
-            $"・グループへドロップしたときの確認: {DoOrNot(settings.ConfirmGroupDropCopyMove)}",
-            $"・項目のドラッグ並び替え: {UseOrNot(settings.EnableItemDragReorder)}",
-            $"・閉じるボタンでタスクトレイに格納: {DoOrNot(settings.MinimizeToTrayOnClose)}",
-            $"・右クリックの詳細操作: {UseOrNot(settings.EnableContextMenuDetails)}",
-            $"・自動バックアップ: {UseOrNot(settings.AutoBackupEnabled)}（{settings.MaxBackupCount}件保持）",
-            $"・削除前の確認: {DoOrNot(settings.ConfirmBeforeDelete)}",
-            $"・削除時にアプリ内のごみ箱へ移動: {DoOrNot(settings.MoveDeletedItemsToTrash)}",
-            $"・テンプレート本文も検索: {DoOrNot(settings.SearchTemplateBody)}"
-        ];
-    }
-
-    private static string GetStorageModeDisplayName(StorageMode mode)
-    {
-        return mode switch
-        {
-            StorageMode.Portable => "このアプリのフォルダに保存",
-            StorageMode.Custom => "自分で選んだ場所に保存",
-            _ => "通常の場所に保存（おすすめ）"
-        };
-    }
-
-    private static string GetTypeDisplayModeDisplayName(TypeDisplayMode mode)
-    {
-        return mode switch
-        {
-            TypeDisplayMode.IconOnly => "アイコンのみ",
-            TypeDisplayMode.TextOnly => "文字のみ",
-            TypeDisplayMode.Hidden => "非表示",
-            _ => "アイコン＋文字"
-        };
-    }
-
-    private static string ShowOrHide(bool value)
-    {
-        return value ? "表示する" : "表示しない";
-    }
-
-    private static string UseOrNot(bool value)
-    {
-        return value ? "使う" : "使わない";
-    }
-
-    private static string DoOrNot(bool value)
-    {
-        return value ? "する" : "しない";
     }
 }

@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using ContextBinder.Models;
 using ContextBinder.Services;
+using MainFormTexts = ContextBinder.Forms.UiTexts.MainForm;
 
 namespace ContextBinder.Forms;
 
@@ -47,7 +48,7 @@ public sealed class MainForm : Form
         _itemActionService = new ItemActionService(_clipboardService);
         _dragDropService = new DragDropService(_fileTypeDetector);
 
-        Text = "ContextBinder v2";
+        Text = MainFormTexts.WindowTitle;
         AutoScaleMode = AutoScaleMode.Dpi;
         MinimumSize = new Size(980, 700);
         Size = new Size(1180, 780);
@@ -114,7 +115,7 @@ public sealed class MainForm : Form
         {
             Dock = DockStyle.Top,
             Height = 24,
-            Text = "グループ一覧",
+            Text = MainFormTexts.GroupListTitle,
             TextAlign = ContentAlignment.MiddleLeft
         };
         _groupListBox.Dock = DockStyle.Fill;
@@ -146,19 +147,19 @@ public sealed class MainForm : Form
             Padding = new Padding(8, 0, 0, 0)
         };
 
-        Button detailButton = CreateActionButton("詳細", "登録内容の詳細を確認します。", DetailSelectedButton_Click);
+        Button detailButton = CreateActionButton(MainFormTexts.DetailButton, DetailSelectedButton_Click);
         _detailButton = detailButton;
         actionPanel.Controls.AddRange([
-            CreateActionButton("グループ追加", "用途ごとに登録先を分けます。", AddGroupButton_Click),
-            CreateActionButton("ファイル追加", "ファイルへの参照を現在のグループへ登録します。", AddFileButton_Click),
-            CreateActionButton("フォルダー追加", "フォルダーへの参照を現在のグループへ登録します。", AddFolderButton_Click),
-            CreateActionButton("URL追加", "WebページのURLを現在のグループへ登録します。", AddUrlButton_Click),
-            CreateActionButton("テンプレート追加", "よく使う文章を登録します。", AddTemplateButton_Click),
-            CreateActionButton("開く", "選択した項目を開きます。テンプレートは本文をコピーします。", OpenSelectedButton_Click),
-            CreateActionButton("コピー", "選択した項目のパス、URL、本文などをコピーします。", CopySelectedButton_Click),
-            CreateActionButton("編集", "タイトルや参照先を編集します。", EditSelectedButton_Click),
+            CreateActionButton(MainFormTexts.AddGroupButton, AddGroupButton_Click),
+            CreateActionButton(MainFormTexts.AddFileButton, AddFileButton_Click),
+            CreateActionButton(MainFormTexts.AddFolderButton, AddFolderButton_Click),
+            CreateActionButton(MainFormTexts.AddUrlButton, AddUrlButton_Click),
+            CreateActionButton(MainFormTexts.AddTemplateButton, AddTemplateButton_Click),
+            CreateActionButton(MainFormTexts.OpenButton, OpenSelectedButton_Click),
+            CreateActionButton(MainFormTexts.CopyButton, CopySelectedButton_Click),
+            CreateActionButton(MainFormTexts.EditButton, EditSelectedButton_Click),
             detailButton,
-            CreateActionButton("削除", "選択した項目を削除します。登録元ファイルは削除されません。", DeleteSelectedButton_Click)
+            CreateActionButton(MainFormTexts.DeleteButton, DeleteSelectedButton_Click)
         ]);
 
         BuildBottomPanel();
@@ -187,10 +188,10 @@ public sealed class MainForm : Form
             FlowDirection = FlowDirection.LeftToRight,
             WrapContents = true
         };
-        _showBeginnerHintsCheckBox.Text = "初心者向け説明を表示";
+        _showBeginnerHintsCheckBox.Text = MainFormTexts.ShowBeginnerHintsToggle;
         _showBeginnerHintsCheckBox.Width = 170;
         _showBeginnerHintsCheckBox.CheckedChanged += DisplayToggleCheckBox_CheckedChanged;
-        _showIconLegendCheckBox.Text = "アイコンの意味を表示";
+        _showIconLegendCheckBox.Text = MainFormTexts.ShowIconMeaningToggle;
         _showIconLegendCheckBox.Width = 170;
         _showIconLegendCheckBox.CheckedChanged += DisplayToggleCheckBox_CheckedChanged;
         _statusLabel.AutoSize = false;
@@ -213,15 +214,10 @@ public sealed class MainForm : Form
         };
         hintsLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));
         hintsLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        Label hintsTitleLabel = CreateBottomTitleLabel("使い方のヒント");
+        Label hintsTitleLabel = CreateBottomTitleLabel(MainFormTexts.BeginnerHintsTitle);
         _beginnerHintsLabel.Dock = DockStyle.Fill;
         _beginnerHintsLabel.TextAlign = ContentAlignment.TopLeft;
-        _beginnerHintsLabel.Text = """
-・グループ追加: 用途ごとに登録先を分けます。
-・ファイル / フォルダー / URL / テンプレート追加: 参照先や文章を登録します。
-・開く / コピー: 選択した項目を開いたり、パス・URL・本文をコピーします。
-・編集 / 詳細 / 削除: 登録内容を確認・整理します。登録元ファイルそのものは削除されません。
-""";
+        _beginnerHintsLabel.Text = MainFormTexts.BeginnerHintsText;
         hintsLayout.Controls.Add(hintsTitleLabel, 0, 0);
         hintsLayout.Controls.Add(_beginnerHintsLabel, 0, 1);
         _beginnerHintsPanel.Controls.Add(hintsLayout);
@@ -237,7 +233,7 @@ public sealed class MainForm : Form
         };
         iconLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));
         iconLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        Label iconTitleLabel = CreateBottomTitleLabel("アイコンの意味");
+        Label iconTitleLabel = CreateBottomTitleLabel(MainFormTexts.IconMeaningTitle);
         _iconLegendFlow.Dock = DockStyle.Fill;
         _iconLegendFlow.FlowDirection = FlowDirection.LeftToRight;
         _iconLegendFlow.WrapContents = true;
@@ -255,12 +251,10 @@ public sealed class MainForm : Form
     private void BuildIconLegend()
     {
         _iconLegendFlow.Controls.Clear();
-        AddLegendItem(BinderItemType.Folder, "フォルダー", "フォルダーを開きます");
-        AddLegendItem(BinderItemType.File, "ファイル", "既定のアプリで開きます");
-        AddLegendItem(BinderItemType.Image, "画像", "画像ファイルです");
-        AddLegendItem(BinderItemType.Video, "動画", "動画ファイルです");
-        AddLegendItem(BinderItemType.Url, "URL", "ブラウザで開きます");
-        AddLegendItem(BinderItemType.Template, "テンプレート", "本文をコピーして使います");
+        foreach (UiTexts.IconMeaningText text in MainFormTexts.IconMeanings)
+        {
+            AddLegendItem(text.Type, text.Title, text.Description);
+        }
     }
 
     private void AddLegendItem(BinderItemType type, string title, string description)
@@ -323,65 +317,65 @@ public sealed class MainForm : Form
         {
             Name = nameof(ItemGridRow.Type),
             DataPropertyName = nameof(ItemGridRow.Type),
-            HeaderText = "種類",
+            HeaderText = MainFormTexts.TypeColumnHeader,
             FillWeight = 18
         });
         _itemGrid.Columns.Add(new DataGridViewTextBoxColumn
         {
             Name = nameof(ItemGridRow.Title),
             DataPropertyName = nameof(ItemGridRow.Title),
-            HeaderText = "タイトル",
+            HeaderText = MainFormTexts.TitleColumnHeader,
             FillWeight = 32
         });
         _itemGrid.Columns.Add(new DataGridViewTextBoxColumn
         {
             Name = nameof(ItemGridRow.Reference),
             DataPropertyName = nameof(ItemGridRow.Reference),
-            HeaderText = "参照先",
+            HeaderText = MainFormTexts.ReferenceColumnHeader,
             FillWeight = 42
         });
         _itemGrid.Columns.Add(new DataGridViewTextBoxColumn
         {
             Name = nameof(ItemGridRow.Status),
             DataPropertyName = nameof(ItemGridRow.Status),
-            HeaderText = "状態",
+            HeaderText = MainFormTexts.StatusColumnHeader,
             FillWeight = 12
         });
     }
 
-    private Button CreateActionButton(string text, string toolTipText, EventHandler clickHandler)
+    private Button CreateActionButton(UiTexts.ActionText actionText, EventHandler clickHandler)
     {
         Button button = new()
         {
-            Text = text,
+            Text = actionText.Label,
             Width = 165,
             Height = 31,
             Margin = new Padding(0, 0, 0, 7)
         };
         button.Click += clickHandler;
-        _toolTip.SetToolTip(button, toolTipText);
+        _toolTip.SetToolTip(button, actionText.ToolTip);
         return button;
     }
 
     private void BuildContextMenu()
     {
-        _itemContextMenu.Items.Add("開く", null, OpenSelectedButton_Click);
-        _itemContextMenu.Items.Add("コピー", null, CopySelectedButton_Click);
-        _itemContextMenu.Items.Add("編集", null, EditSelectedButton_Click);
-        _detailContextMenuItem = _itemContextMenu.Items.Add("詳細", null, DetailSelectedButton_Click);
+        _itemContextMenu.Items.Add(MainFormTexts.OpenButton.Label, null, OpenSelectedButton_Click);
+        _itemContextMenu.Items.Add(MainFormTexts.CopyButton.Label, null, CopySelectedButton_Click);
+        _itemContextMenu.Items.Add(MainFormTexts.EditButton.Label, null, EditSelectedButton_Click);
+        _detailContextMenuItem = _itemContextMenu.Items.Add(MainFormTexts.DetailButton.Label, null, DetailSelectedButton_Click);
         _itemContextMenu.Items.Add(new ToolStripSeparator());
-        _itemContextMenu.Items.Add("削除", null, DeleteSelectedButton_Click);
+        _itemContextMenu.Items.Add(MainFormTexts.DeleteButton.Label, null, DeleteSelectedButton_Click);
 
         // TODO: 種類別メニュー、置いてあるフォルダーを開く、タイトルコピー、グループ間コピー/移動を追加する。
     }
 
     private void BuildTrayIcon()
     {
-        _trayMenu.Items.Add("開く", null, (_, _) => ShowFromTray());
-        _trayMenu.Items.Add("終了", null, (_, _) => ExitApplication());
+        _trayMenu.Items.Add(MainFormTexts.TrayOpen, null, (_, _) => ShowFromTray());
+        _trayMenu.Items.Add(MainFormTexts.TrayExit, null, (_, _) => ExitApplication());
 
         _notifyIcon.Icon = _iconAssetService.GetTrayIcon();
-        _notifyIcon.Text = "ContextBinder v2";
+        _notifyIcon.Text = MainFormTexts.WindowTitle;
         _notifyIcon.ContextMenuStrip = _trayMenu;
         _notifyIcon.Visible = true;
         _notifyIcon.DoubleClick += (_, _) => ShowFromTray();
