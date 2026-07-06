@@ -1,19 +1,22 @@
 using ContextBinder.Models;
 using System.Drawing.Drawing2D;
+using System.Runtime.InteropServices;
 
 namespace ContextBinder.Services;
 
 public sealed class IconAssetService : IDisposable
 {
     private const int ItemIconSize = 28;
+    private readonly string _iconDirectory;
     private readonly Dictionary<BinderItemType, Image> _itemIconCache = [];
     private readonly Image _placeholderImage;
     private Icon? _appIcon;
     private Icon? _trayIcon;
     private bool _disposed;
 
-    public IconAssetService()
+    public IconAssetService(string? iconDirectory = null)
     {
+        _iconDirectory = Path.GetFullPath(iconDirectory ?? Path.Combine(AppContext.BaseDirectory, "Assets", "Icons"));
         _placeholderImage = CreatePlaceholderImage();
     }
 
@@ -27,9 +30,7 @@ public sealed class IconAssetService : IDisposable
         }
 
         string iconPath = GetIconPath(GetItemIconFileName(type));
-        Image image = File.Exists(iconPath)
-            ? LoadScaledImage(iconPath, ItemIconSize)
-            : _placeholderImage;
+        Image image = TryLoadScaledImage(iconPath, ItemIconSize) ?? _placeholderImage;
 
         _itemIconCache[type] = image;
         return image;
@@ -84,24 +85,36 @@ public sealed class IconAssetService : IDisposable
         _disposed = true;
     }
 
-    private static string GetIconPath(string fileName)
+    private string GetIconPath(string fileName)
     {
-        return Path.Combine(AppContext.BaseDirectory, "Assets", "Icons", fileName);
+        return Path.Combine(_iconDirectory, fileName);
     }
 
-    private static Image LoadScaledImage(string filePath, int size)
+    private static Image? TryLoadScaledImage(string filePath, int size)
     {
-        using Image sourceImage = Image.FromFile(filePath);
-        Bitmap bitmap = new(size, size);
+        if (!File.Exists(filePath))
+        {
+            return null;
+        }
 
-        using Graphics graphics = Graphics.FromImage(bitmap);
-        graphics.Clear(Color.Transparent);
-        graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
-        graphics.SmoothingMode = SmoothingMode.HighQuality;
-        graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
-        graphics.DrawImage(sourceImage, new Rectangle(0, 0, size, size));
+        try
+        {
+            using Image sourceImage = Image.FromFile(filePath);
+            Bitmap bitmap = new(size, size);
 
-        return bitmap;
+            using Graphics graphics = Graphics.FromImage(bitmap);
+            graphics.Clear(Color.Transparent);
+            graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
+            graphics.SmoothingMode = SmoothingMode.HighQuality;
+            graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
+            graphics.DrawImage(sourceImage, new Rectangle(0, 0, size, size));
+
+            return bitmap;
+        }
+        catch (Exception ex) when (IsIconLoadException(ex))
+        {
+            return null;
+        }
     }
 
     private static Image CreatePlaceholderImage()
@@ -123,10 +136,30 @@ public sealed class IconAssetService : IDisposable
         return bitmap;
     }
 
-    private static Icon LoadIconOrDefault(string fileName)
+    private Icon LoadIconOrDefault(string fileName)
     {
         string iconPath = GetIconPath(fileName);
-        return File.Exists(iconPath) ? new Icon(iconPath) : (Icon)SystemIcons.Application.Clone();
+        if (File.Exists(iconPath))
+        {
+            try
+            {
+                return new Icon(iconPath);
+            }
+            catch (Exception ex) when (IsIconLoadException(ex))
+            {
+            }
+        }
+
+        return (Icon)SystemIcons.Application.Clone();
+    }
+
+    private static bool IsIconLoadException(Exception ex)
+    {
+        return ex is IOException
+            or UnauthorizedAccessException
+            or ArgumentException
+            or ExternalException
+            or OutOfMemoryException;
     }
 
     private void ThrowIfDisposed()
