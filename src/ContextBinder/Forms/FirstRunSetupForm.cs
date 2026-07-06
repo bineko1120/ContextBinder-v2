@@ -55,10 +55,12 @@ public sealed class FirstRunSetupForm : Form
 
         Text = "ContextBinder 初回セットアップ";
         StartPosition = FormStartPosition.CenterScreen;
-        FormBorderStyle = FormBorderStyle.FixedDialog;
-        MaximizeBox = false;
+        FormBorderStyle = FormBorderStyle.Sizable;
+        MaximizeBox = true;
         MinimizeBox = false;
-        ClientSize = new Size(840, 720);
+        AutoScaleMode = AutoScaleMode.Dpi;
+        ClientSize = new Size(900, 760);
+        MinimumSize = new Size(860, 720);
         Font = SystemFonts.MessageBoxFont;
 
         InitializeSetupControls();
@@ -125,7 +127,7 @@ public sealed class FirstRunSetupForm : Form
 
         RegisterSettingControl(_typeDisplayModeComboBox);
         RegisterSettingControl(_showBeginnerHintsCheckBox, "初心者向け説明を表示");
-        RegisterSettingControl(_showIconLegendCheckBox, "アイコン凡例を表示");
+        RegisterSettingControl(_showIconLegendCheckBox, "アイコンの意味を表示");
         RegisterSettingControl(_showOperationStatusCheckBox, "操作結果ステータスを表示");
         RegisterSettingControl(_confirmTitleOnDropAddCheckBox, "D&D追加時にタイトルを確認");
         RegisterSettingControl(_focusExistingItemOnDuplicateCheckBox, "重複時に既存項目へジャンプ");
@@ -331,10 +333,10 @@ AppDataには保存しません。
         FlowLayoutPanel panel = CreateVerticalPanel();
         bool customSetup = _customSetupRadio.Checked;
 
-        panel.Controls.Add(CreateHeading(customSetup ? "使いやすさ設定を変更してください" : "おすすめ設定の内容を確認してください"));
+        panel.Controls.Add(CreateHeading(customSetup ? "使いやすさ設定を選んでください" : "おすすめ設定の内容を確認してください"));
         panel.Controls.Add(CreateParagraph(customSetup
-            ? "必要な項目を変更できます。後の設定画面でさらに調整する想定です。"
-            : "初心者おすすめ設定は、見やすさと安全性を優先した初期値です。必要なら少し変更できます。"));
+            ? "画面の表示、ドラッグ＆ドロップ、削除確認などを自分の使い方に合わせて選べます。"
+            : "初心者おすすめ設定は、見やすさと安全性を優先した初期値です。内容を確認し、必要なら少しだけ変更できます。"));
 
         if (!customSetup)
         {
@@ -342,32 +344,66 @@ AppDataには保存しません。
             panel.Controls.Add(_editRecommendedSettingsCheckBox);
         }
 
-        panel.Controls.Add(CreateSettingSectionLabel("表示"));
-        panel.Controls.Add(CreateComboRow("種類表示", _typeDisplayModeComboBox, "非表示は分かりづらくなるため非推奨です。"));
-        panel.Controls.Add(_showBeginnerHintsCheckBox);
-        panel.Controls.Add(_showIconLegendCheckBox);
-        panel.Controls.Add(_showOperationStatusCheckBox);
+        panel.Controls.Add(CreateSettingsCategoryPanel(
+            "表示",
+            "一覧の見え方と、画面下に出す説明を選びます。",
+            new Control[]
+            {
+                CreateComboRow("種類表示", _typeDisplayModeComboBox, "一覧で「種類」をどう表示するか選べます。非表示は分かりづらくなるため非推奨です。"),
+                CreateSettingRow(_showBeginnerHintsCheckBox, "画面下に、操作の意味を分かりやすく表示します。"),
+                CreateSettingRow(_showIconLegendCheckBox, "猫アイコンが何を表しているか表示します。"),
+                CreateSettingRow(_showOperationStatusCheckBox, "読み込みや保存などの結果を画面下に表示します。")
+            }));
 
-        panel.Controls.Add(CreateSettingSectionLabel("ドラッグ＆ドロップ"));
-        panel.Controls.Add(_confirmTitleOnDropAddCheckBox);
-        panel.Controls.Add(_focusExistingItemOnDuplicateCheckBox);
-        panel.Controls.Add(_enableGroupDropModifierShortcutsCheckBox);
-        panel.Controls.Add(_confirmGroupDropCopyMoveCheckBox);
-        panel.Controls.Add(_enableItemDragReorderCheckBox);
-        panel.Controls.Add(_enableExternalFileDropOutCheckBox);
-        panel.Controls.Add(_enableExternalUrlTextDragOutCheckBox);
-        panel.Controls.Add(_enableExternalTemplateTextDragOutCheckBox);
+        panel.Controls.Add(CreateSettingsCategoryPanel(
+            "ドラッグ＆ドロップ",
+            "ファイルやURLを登録するとき、または他のアプリへ渡すときの動きを選びます。",
+            new Control[]
+            {
+                CreateSettingRow(_confirmTitleOnDropAddCheckBox, "登録時にタイトルを確認したい場合に使います。"),
+                CreateSettingRow(_focusExistingItemOnDuplicateCheckBox, "同じ内容がすでにある場合、その項目を見つけやすくします。"),
+                CreateSettingRow(_enableGroupDropModifierShortcutsCheckBox, "グループへドラッグしたとき、Ctrl/Shiftキーでコピー・移動を切り替えられます。"),
+                CreateSettingRow(_confirmGroupDropCopyMoveCheckBox, "グループへドロップしたとき、コピーか移動か迷わないよう確認します。"),
+                CreateSettingRow(_enableItemDragReorderCheckBox, "一覧の順番を手で入れ替えられます。"),
+                CreateSettingRow(_enableExternalFileDropOutCheckBox, "ファイル、画像、動画、フォルダーを他のアプリへドラッグして使いたい人向けです。"),
+                CreateSettingRow(_enableExternalUrlTextDragOutCheckBox, "URLを他のアプリへドラッグして使いたい人向けです。"),
+                CreateSettingRow(_enableExternalTemplateTextDragOutCheckBox, "テンプレート文を他のアプリへドラッグして使いたい人向けです。")
+            }));
 
-        panel.Controls.Add(CreateSettingSectionLabel("常駐・右クリック"));
-        panel.Controls.Add(_minimizeToTrayOnCloseCheckBox);
-        panel.Controls.Add(_enableContextMenuDetailsCheckBox);
+        panel.Controls.Add(CreateSettingsCategoryPanel(
+            "閉じるときの動作",
+            "アプリを閉じたとき、完全終了するか右下にしまうかを選びます。",
+            new Control[]
+            {
+                CreateSettingRow(_minimizeToTrayOnCloseCheckBox, "完全終了せず、タスクトレイに格納します。")
+            }));
 
-        panel.Controls.Add(CreateSettingSectionLabel("バックアップ・削除・検索"));
-        panel.Controls.Add(_autoBackupEnabledCheckBox);
-        panel.Controls.Add(CreateComboRow("バックアップ保持数", _maxBackupCountNumeric, "初期値は20件です。"));
-        panel.Controls.Add(_confirmBeforeDeleteCheckBox);
-        panel.Controls.Add(_moveDeletedItemsToTrashCheckBox);
-        panel.Controls.Add(_searchTemplateBodyCheckBox);
+        panel.Controls.Add(CreateSettingsCategoryPanel(
+            "右クリックの便利機能",
+            "項目を右クリックしたときに使える操作を増やします。",
+            new Control[]
+            {
+                CreateSettingRow(_enableContextMenuDetailsCheckBox, "フォルダを開く、詳細を確認するなどの操作を追加します。")
+            }));
+
+        panel.Controls.Add(CreateSettingsCategoryPanel(
+            "バックアップと削除",
+            "登録内容と設定を守り、間違って消しにくくするための設定です。",
+            new Control[]
+            {
+                CreateSettingRow(_autoBackupEnabledCheckBox, "登録内容と設定を自動でバックアップします。"),
+                CreateComboRow("バックアップ保存数", _maxBackupCountNumeric, "残しておくバックアップの数です。初期値は20件です。"),
+                CreateSettingRow(_confirmBeforeDeleteCheckBox, "削除前に確認して、間違って消しにくくします。"),
+                CreateSettingRow(_moveDeletedItemsToTrashCheckBox, "すぐ完全削除せず、アプリ内のごみ箱であとから見直せます。")
+            }));
+
+        panel.Controls.Add(CreateSettingsCategoryPanel(
+            "検索",
+            "項目を探すとき、どこまで検索対象にするかを選びます。",
+            new Control[]
+            {
+                CreateSettingRow(_searchTemplateBodyCheckBox, "テンプレート文の中身も検索対象にします。")
+            }));
 
         UpdateSettingsEditability();
         return panel;
@@ -377,17 +413,36 @@ AppDataには保存しません。
     {
         FlowLayoutPanel panel = CreateVerticalPanel();
         panel.Controls.Add(CreateHeading("確認して開始"));
+        panel.Controls.Add(CreateParagraph("選んだ内容を確認してください。「開始」を押すと、登録内容と設定の保存先を作成してContextBinderを起動します。"));
 
-        TextBox summaryTextBox = new()
-        {
-            Width = ContentWidth,
-            Height = 540,
-            Multiline = true,
-            ReadOnly = true,
-            ScrollBars = ScrollBars.Vertical,
-            Text = BuildSummaryText()
-        };
-        panel.Controls.Add(summaryTextBox);
+        AppSettings settings = CreateSettingsFromControls();
+        panel.Controls.Add(CreateConfirmationSection("始め方", [
+            _customSetupRadio.Checked ? "カスタム設定" : "初心者おすすめ設定"
+        ]));
+        panel.Controls.Add(CreateConfirmationSection("保存場所", [
+            GetStorageModeDisplayName(GetSelectedStorageMode()),
+            CreateStoragePreviewText()
+        ]));
+        panel.Controls.Add(CreateConfirmationSection("主な設定", BuildMainSettingsSummary(settings)));
+        panel.Controls.Add(CreateConfirmationSection("作成されるもの", [
+            "・contextbinder.store.json",
+            "・settings.json",
+            "・backups",
+            "・trash"
+        ]));
+        panel.Controls.Add(CreateConfirmationSection("保存されるもの", [
+            "・登録したファイル、フォルダ、URLの参照先",
+            "・登録したテンプレート文",
+            "・グループ名と並び順",
+            "・表示設定や操作設定",
+            "・自動バックアップ",
+            "・ごみ箱、削除履歴"
+        ]));
+        panel.Controls.Add(CreateConfirmationSection("保存されないもの", [
+            "・登録元のファイルそのもの",
+            "・登録元の画像や動画そのもの",
+            "・登録元のフォルダの中身"
+        ]));
         return panel;
     }
 
@@ -398,7 +453,8 @@ AppDataには保存しません。
             Dock = DockStyle.Fill,
             FlowDirection = FlowDirection.TopDown,
             WrapContents = false,
-            AutoScroll = true
+            AutoScroll = true,
+            Padding = new Padding(0, 0, 8, 0)
         };
     }
 
@@ -456,25 +512,87 @@ AppDataには保存しません。
         return CreateOptionPanel(radioButton, description, height);
     }
 
-    private static Label CreateSettingSectionLabel(string text)
+    private static Panel CreateSettingsCategoryPanel(string title, string description, IReadOnlyCollection<Control> controls)
     {
-        return new Label
+        Panel sectionPanel = new()
         {
-            Text = text,
             Width = ContentWidth,
-            Height = 28,
-            Margin = new Padding(0, 10, 0, 2),
+            BorderStyle = BorderStyle.FixedSingle,
+            Padding = new Padding(10),
+            Margin = new Padding(0, 6, 0, 12)
+        };
+
+        Label titleLabel = new()
+        {
+            Text = title,
+            Location = new Point(10, 8),
+            Width = ContentWidth - 24,
+            Height = 24,
             Font = new Font(Control.DefaultFont, FontStyle.Bold),
             TextAlign = ContentAlignment.MiddleLeft
         };
+        Label descriptionLabel = new()
+        {
+            Text = description,
+            Location = new Point(10, 34),
+            Width = ContentWidth - 24,
+            Height = 36,
+            ForeColor = SystemColors.GrayText
+        };
+        FlowLayoutPanel bodyPanel = new()
+        {
+            Location = new Point(10, 74),
+            Width = ContentWidth - 24,
+            FlowDirection = FlowDirection.TopDown,
+            WrapContents = false,
+            AutoSize = true
+        };
+
+        foreach (Control control in controls)
+        {
+            bodyPanel.Controls.Add(control);
+        }
+
+        int bodyHeight = controls.Sum(control => control.Height + control.Margin.Vertical);
+        bodyPanel.Height = bodyHeight;
+        sectionPanel.Height = 94 + bodyHeight;
+        sectionPanel.Controls.Add(titleLabel);
+        sectionPanel.Controls.Add(descriptionLabel);
+        sectionPanel.Controls.Add(bodyPanel);
+        return sectionPanel;
+    }
+
+    private static Panel CreateSettingRow(CheckBox checkBox, string description)
+    {
+        Panel panel = new()
+        {
+            Width = ContentWidth - 24,
+            Height = 58,
+            Margin = new Padding(0, 0, 0, 4)
+        };
+        checkBox.Location = new Point(0, 0);
+        checkBox.Width = ContentWidth - 40;
+
+        Label descriptionLabel = new()
+        {
+            Text = description,
+            Location = new Point(24, 28),
+            Width = ContentWidth - 64,
+            Height = 28,
+            ForeColor = SystemColors.GrayText
+        };
+        panel.Controls.Add(checkBox);
+        panel.Controls.Add(descriptionLabel);
+        return panel;
     }
 
     private static Panel CreateComboRow(string labelText, Control control, string description)
     {
         Panel panel = new()
         {
-            Width = ContentWidth,
-            Height = 54
+            Width = ContentWidth - 24,
+            Height = 60,
+            Margin = new Padding(0, 0, 0, 4)
         };
         Label label = new()
         {
@@ -488,13 +606,61 @@ AppDataには保存しません。
         {
             Text = description,
             Location = new Point(180, 28),
-            Width = ContentWidth - 190,
-            Height = 22
+            Width = ContentWidth - 220,
+            Height = 30,
+            ForeColor = SystemColors.GrayText
         };
         panel.Controls.Add(label);
         panel.Controls.Add(control);
         panel.Controls.Add(descriptionLabel);
         return panel;
+    }
+
+    private static Panel CreateConfirmationSection(string title, IEnumerable<string> lines)
+    {
+        Panel sectionPanel = new()
+        {
+            Width = ContentWidth,
+            BorderStyle = BorderStyle.FixedSingle,
+            Padding = new Padding(10),
+            Margin = new Padding(0, 0, 0, 10)
+        };
+        Label titleLabel = new()
+        {
+            Text = title,
+            Location = new Point(10, 8),
+            Width = ContentWidth - 24,
+            Height = 24,
+            Font = new Font(Control.DefaultFont, FontStyle.Bold),
+            TextAlign = ContentAlignment.MiddleLeft
+        };
+        FlowLayoutPanel bodyPanel = new()
+        {
+            Location = new Point(10, 36),
+            Width = ContentWidth - 24,
+            FlowDirection = FlowDirection.TopDown,
+            WrapContents = false,
+            AutoSize = true
+        };
+
+        foreach (string line in lines)
+        {
+            Label lineLabel = new()
+            {
+                Text = line,
+                AutoSize = true,
+                MaximumSize = new Size(ContentWidth - 38, 0),
+                Margin = new Padding(0, 0, 0, 4)
+            };
+            bodyPanel.Controls.Add(lineLabel);
+        }
+
+        int bodyHeight = bodyPanel.Controls.Cast<Control>().Sum(control => control.Height + control.Margin.Vertical);
+        bodyPanel.Height = bodyHeight;
+        sectionPanel.Height = Math.Max(76, 54 + bodyHeight);
+        sectionPanel.Controls.Add(titleLabel);
+        sectionPanel.Controls.Add(bodyPanel);
+        return sectionPanel;
     }
 
     private void UpdateSettingsEditability()
@@ -682,52 +848,26 @@ AppDataには保存しません。
         return _customStorageRadio.Checked ? StorageMode.Custom : StorageMode.Standard;
     }
 
-    private string BuildSummaryText()
+    private static string[] BuildMainSettingsSummary(AppSettings settings)
     {
-        AppSettings settings = CreateSettingsFromControls();
-        return $"""
-始め方:
-{(_customSetupRadio.Checked ? "カスタム設定" : "初心者おすすめ")}
-
-登録内容と設定の保存場所:
-{GetStorageModeDisplayName(GetSelectedStorageMode())}
-
-保存先パス:
-{CreateStoragePreviewText()}
-
-主な設定内容:
-・種類表示: {GetTypeDisplayModeDisplayName(settings.TypeDisplayMode)}
-・初心者向け説明: {OnOff(settings.ShowBeginnerHints)}
-・アイコン凡例: {OnOff(settings.ShowIconLegend)}
-・D&D追加時タイトル確認: {OnOff(settings.ConfirmTitleOnDropAdd)}
-・重複時に既存項目へジャンプ: {OnOff(settings.FocusExistingItemOnDuplicate)}
-・Ctrl/Shiftドロップショートカット: {OnOff(settings.EnableGroupDropModifierShortcuts)}
-・通常グループドロップ時確認: {OnOff(settings.ConfirmGroupDropCopyMove)}
-・閉じるボタンでタスクトレイ: {OnOff(settings.MinimizeToTrayOnClose)}
-・自動バックアップ: {OnOff(settings.AutoBackupEnabled)} / 保持数 {settings.MaxBackupCount}
-・削除前確認: {OnOff(settings.ConfirmBeforeDelete)}
-・削除時ごみ箱移動: {OnOff(settings.MoveDeletedItemsToTrash)}
-・テンプレート本文検索: {OnOff(settings.SearchTemplateBody)}
-
-作成されるもの:
-・contextbinder.store.json
-・settings.json
-・backups
-・trash
-
-保存されるもの:
-・登録したファイル、フォルダ、URLの参照先
-・登録したテンプレート文
-・グループ名と並び順
-・表示設定や操作設定
-・自動バックアップ
-・ごみ箱、削除履歴
-
-保存されないもの:
-・登録元のファイルそのもの
-・登録元の画像や動画そのもの
-・登録元のフォルダの中身
-""";
+        return
+        [
+            $"・種類表示: {GetTypeDisplayModeDisplayName(settings.TypeDisplayMode)}",
+            $"・初心者向け説明: {ShowOrHide(settings.ShowBeginnerHints)}",
+            $"・アイコンの意味: {ShowOrHide(settings.ShowIconLegend)}",
+            $"・操作結果ステータス: {ShowOrHide(settings.ShowOperationStatus)}",
+            $"・追加時にタイトル確認: {DoOrNot(settings.ConfirmTitleOnDropAdd)}",
+            $"・重複時に既存項目へ移動: {DoOrNot(settings.FocusExistingItemOnDuplicate)}",
+            $"・Ctrl/Shiftキーでコピー・移動を切り替え: {UseOrNot(settings.EnableGroupDropModifierShortcuts)}",
+            $"・グループへドロップしたときの確認: {DoOrNot(settings.ConfirmGroupDropCopyMove)}",
+            $"・項目のドラッグ並び替え: {UseOrNot(settings.EnableItemDragReorder)}",
+            $"・閉じるボタンでタスクトレイに格納: {DoOrNot(settings.MinimizeToTrayOnClose)}",
+            $"・右クリックの詳細操作: {UseOrNot(settings.EnableContextMenuDetails)}",
+            $"・自動バックアップ: {UseOrNot(settings.AutoBackupEnabled)}（{settings.MaxBackupCount}件保持）",
+            $"・削除前の確認: {DoOrNot(settings.ConfirmBeforeDelete)}",
+            $"・削除時にアプリ内のごみ箱へ移動: {DoOrNot(settings.MoveDeletedItemsToTrash)}",
+            $"・テンプレート本文も検索: {DoOrNot(settings.SearchTemplateBody)}"
+        ];
     }
 
     private static string GetStorageModeDisplayName(StorageMode mode)
@@ -751,8 +891,18 @@ AppDataには保存しません。
         };
     }
 
-    private static string OnOff(bool value)
+    private static string ShowOrHide(bool value)
     {
-        return value ? "ON" : "OFF";
+        return value ? "表示する" : "表示しない";
+    }
+
+    private static string UseOrNot(bool value)
+    {
+        return value ? "使う" : "使わない";
+    }
+
+    private static string DoOrNot(bool value)
+    {
+        return value ? "する" : "しない";
     }
 }

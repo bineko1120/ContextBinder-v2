@@ -48,8 +48,9 @@ public sealed class MainForm : Form
         _dragDropService = new DragDropService(_fileTypeDetector);
 
         Text = "ContextBinder v2";
-        MinimumSize = new Size(960, 600);
-        Size = new Size(1120, 680);
+        AutoScaleMode = AutoScaleMode.Dpi;
+        MinimumSize = new Size(980, 700);
+        Size = new Size(1180, 780);
         StartPosition = FormStartPosition.CenterScreen;
         Font = SystemFonts.MessageBoxFont;
         AllowDrop = true;
@@ -99,7 +100,7 @@ public sealed class MainForm : Form
         };
         root.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 190));
         root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        root.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 165));
+        root.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 185));
         root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         root.RowStyles.Add(new RowStyle(SizeType.Absolute, 90));
         _bottomRowStyle = root.RowStyles[1];
@@ -141,6 +142,7 @@ public sealed class MainForm : Form
             Dock = DockStyle.Fill,
             FlowDirection = FlowDirection.TopDown,
             WrapContents = false,
+            AutoScroll = true,
             Padding = new Padding(8, 0, 0, 0)
         };
 
@@ -176,25 +178,26 @@ public sealed class MainForm : Form
         _bottomPanel.RowCount = 3;
         _bottomPanel.Padding = new Padding(0, 8, 0, 0);
         _bottomPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
-        _bottomPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 58));
-        _bottomPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 70));
+        _bottomPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 124));
+        _bottomPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 148));
 
         FlowLayoutPanel togglePanel = new()
         {
             Dock = DockStyle.Fill,
             FlowDirection = FlowDirection.LeftToRight,
-            WrapContents = false
+            WrapContents = true
         };
         _showBeginnerHintsCheckBox.Text = "初心者向け説明を表示";
         _showBeginnerHintsCheckBox.Width = 170;
         _showBeginnerHintsCheckBox.CheckedChanged += DisplayToggleCheckBox_CheckedChanged;
-        _showIconLegendCheckBox.Text = "アイコン凡例を表示";
-        _showIconLegendCheckBox.Width = 150;
+        _showIconLegendCheckBox.Text = "アイコンの意味を表示";
+        _showIconLegendCheckBox.Width = 170;
         _showIconLegendCheckBox.CheckedChanged += DisplayToggleCheckBox_CheckedChanged;
         _statusLabel.AutoSize = false;
-        _statusLabel.Width = 720;
+        _statusLabel.Width = 520;
         _statusLabel.Height = 26;
         _statusLabel.TextAlign = ContentAlignment.MiddleLeft;
+        _statusLabel.AutoEllipsis = true;
         togglePanel.Controls.Add(_showBeginnerHintsCheckBox);
         togglePanel.Controls.Add(_showIconLegendCheckBox);
         togglePanel.Controls.Add(_statusLabel);
@@ -202,18 +205,46 @@ public sealed class MainForm : Form
         _beginnerHintsPanel.Dock = DockStyle.Fill;
         _beginnerHintsPanel.BorderStyle = BorderStyle.FixedSingle;
         _beginnerHintsPanel.Padding = new Padding(8);
+        TableLayoutPanel hintsLayout = new()
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 2
+        };
+        hintsLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));
+        hintsLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        Label hintsTitleLabel = CreateBottomTitleLabel("使い方のヒント");
         _beginnerHintsLabel.Dock = DockStyle.Fill;
-        _beginnerHintsLabel.TextAlign = ContentAlignment.MiddleLeft;
-        _beginnerHintsLabel.Text = "操作: グループ追加=用途ごとに登録先を分けます / ファイル・フォルダー・URL・テンプレート追加=参照先や文章を登録します / 開く=選択項目を開きます / コピー=パス・URL・本文をコピーします / 編集・詳細・削除=登録内容を管理します";
-        _beginnerHintsPanel.Controls.Add(_beginnerHintsLabel);
+        _beginnerHintsLabel.TextAlign = ContentAlignment.TopLeft;
+        _beginnerHintsLabel.Text = """
+・グループ追加: 用途ごとに登録先を分けます。
+・ファイル / フォルダー / URL / テンプレート追加: 参照先や文章を登録します。
+・開く / コピー: 選択した項目を開いたり、パス・URL・本文をコピーします。
+・編集 / 詳細 / 削除: 登録内容を確認・整理します。登録元ファイルそのものは削除されません。
+""";
+        hintsLayout.Controls.Add(hintsTitleLabel, 0, 0);
+        hintsLayout.Controls.Add(_beginnerHintsLabel, 0, 1);
+        _beginnerHintsPanel.Controls.Add(hintsLayout);
 
         _iconLegendPanel.Dock = DockStyle.Fill;
         _iconLegendPanel.BorderStyle = BorderStyle.FixedSingle;
         _iconLegendPanel.Padding = new Padding(8);
+        TableLayoutPanel iconLayout = new()
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 2
+        };
+        iconLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));
+        iconLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        Label iconTitleLabel = CreateBottomTitleLabel("アイコンの意味");
         _iconLegendFlow.Dock = DockStyle.Fill;
         _iconLegendFlow.FlowDirection = FlowDirection.LeftToRight;
-        _iconLegendFlow.WrapContents = false;
-        _iconLegendPanel.Controls.Add(_iconLegendFlow);
+        _iconLegendFlow.WrapContents = true;
+        _iconLegendFlow.AutoScroll = true;
+        iconLayout.Controls.Add(iconTitleLabel, 0, 0);
+        iconLayout.Controls.Add(_iconLegendFlow, 0, 1);
+        _iconLegendPanel.Controls.Add(iconLayout);
         BuildIconLegend();
 
         _bottomPanel.Controls.Add(togglePanel, 0, 0);
@@ -236,27 +267,38 @@ public sealed class MainForm : Form
     {
         Panel itemPanel = new()
         {
-            Width = 180,
-            Height = 48,
-            Margin = new Padding(0, 0, 6, 0)
+            Width = 250,
+            Height = 50,
+            Margin = new Padding(0, 0, 8, 6)
         };
         PictureBox pictureBox = new()
         {
             Image = _iconAssetService.GetItemIcon(type),
             SizeMode = PictureBoxSizeMode.Zoom,
-            Location = new Point(0, 8),
+            Location = new Point(0, 7),
             Size = new Size(30, 30)
         };
         Label label = new()
         {
             Text = $"{title}: {description}",
             Location = new Point(36, 2),
-            Size = new Size(138, 44),
+            Size = new Size(208, 44),
             TextAlign = ContentAlignment.MiddleLeft
         };
         itemPanel.Controls.Add(pictureBox);
         itemPanel.Controls.Add(label);
         _iconLegendFlow.Controls.Add(itemPanel);
+    }
+
+    private static Label CreateBottomTitleLabel(string text)
+    {
+        return new Label
+        {
+            Text = text,
+            Dock = DockStyle.Fill,
+            Font = new Font(Control.DefaultFont, FontStyle.Bold),
+            TextAlign = ContentAlignment.MiddleLeft
+        };
     }
 
     private void ConfigureItemGridColumns()
@@ -312,7 +354,7 @@ public sealed class MainForm : Form
         Button button = new()
         {
             Text = text,
-            Width = 145,
+            Width = 165,
             Height = 31,
             Margin = new Padding(0, 0, 0, 7)
         };
@@ -423,17 +465,19 @@ public sealed class MainForm : Form
             return;
         }
 
+        int hintsHeight = _settings.ShowBeginnerHints ? 124 : 0;
+        int iconMeaningHeight = _settings.ShowIconLegend ? 148 : 0;
         int height = 44;
-        _bottomPanel.RowStyles[1].Height = _settings.ShowBeginnerHints ? 58 : 0;
-        _bottomPanel.RowStyles[2].Height = _settings.ShowIconLegend ? 70 : 0;
+        _bottomPanel.RowStyles[1].Height = hintsHeight;
+        _bottomPanel.RowStyles[2].Height = iconMeaningHeight;
         if (_settings.ShowBeginnerHints)
         {
-            height += 58;
+            height += hintsHeight;
         }
 
         if (_settings.ShowIconLegend)
         {
-            height += 70;
+            height += iconMeaningHeight;
         }
 
         _bottomRowStyle.Height = height;

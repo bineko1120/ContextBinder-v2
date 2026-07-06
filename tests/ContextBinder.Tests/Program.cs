@@ -51,7 +51,7 @@ try
     Assert(loadedStandardSettings.FirstRunCompleted, "標準モードで FirstRunCompleted が保存・読み込みされること");
     Assert(loadedStandardSettings.StorageMode == StorageMode.Standard, "標準モードの設定が読み戻されること");
     Assert(loadedStandardSettings.ShowBeginnerHints, "初心者向け説明の初期値が保存・読み込みされること");
-    Assert(loadedStandardSettings.ShowIconLegend, "アイコン凡例の初期値が保存・読み込みされること");
+    Assert(loadedStandardSettings.ShowIconLegend, "アイコンの意味の初期値が保存・読み込みされること");
     Assert(loadedStandardSettings.TypeDisplayMode == TypeDisplayMode.IconAndText, "種類表示モードの初期値が保存・読み込みされること");
 
     standardStoreService.EnsureStoreFile();
@@ -70,7 +70,7 @@ try
     standardStoreService.SaveSettings(customDisplaySettings);
     AppSettings loadedCustomDisplaySettings = standardStoreService.LoadSettings();
     Assert(!loadedCustomDisplaySettings.ShowBeginnerHints, "初心者向け説明OFFが settings.json に保存・読み込みされること");
-    Assert(!loadedCustomDisplaySettings.ShowIconLegend, "アイコン凡例OFFが settings.json に保存・読み込みされること");
+    Assert(!loadedCustomDisplaySettings.ShowIconLegend, "アイコンの意味OFFが settings.json に保存・読み込みされること");
     Assert(loadedCustomDisplaySettings.TypeDisplayMode == TypeDisplayMode.TextOnly, "TypeDisplayMode が保存・読み込みされること");
     Assert(loadedCustomDisplaySettings.ConfirmTitleOnDropAdd, "D&Dタイトル確認設定が保存・読み込みされること");
     Assert(!loadedCustomDisplaySettings.FocusExistingItemOnDuplicate, "重複時ジャンプ設定が保存・読み込みされること");
@@ -94,7 +94,7 @@ try
     {
         using IconAssetService missingIconService = new(missingIconRoot);
         using MainForm form = new(new StoreService(standardLocation, new BackupService()), missingIconService);
-        Assert(form.Text == "ContextBinder v2", "説明/凡例OFFかつ種類非表示でも MainForm を初期化できること");
+        Assert(form.Text == "ContextBinder v2", "説明/アイコンの意味OFFかつ種類非表示でも MainForm を初期化できること");
     });
     standardStoreService.SaveSettings(loadedStandardSettings);
 
@@ -291,7 +291,7 @@ static void AssertRecommendedSettings(AppSettings settings)
 {
     Assert(settings.TypeDisplayMode == TypeDisplayMode.IconAndText, "初心者おすすめの種類表示がアイコン＋文字であること");
     Assert(settings.ShowBeginnerHints, "初心者おすすめで初心者向け説明がONであること");
-    Assert(settings.ShowIconLegend, "初心者おすすめでアイコン凡例がONであること");
+    Assert(settings.ShowIconLegend, "初心者おすすめでアイコンの意味がONであること");
     Assert(settings.ShowOperationStatus, "初心者おすすめで操作結果ステータスがONであること");
     Assert(!settings.ConfirmTitleOnDropAdd, "初心者おすすめでD&Dタイトル確認がOFFであること");
     Assert(settings.FocusExistingItemOnDuplicate, "初心者おすすめで重複時ジャンプがONであること");
