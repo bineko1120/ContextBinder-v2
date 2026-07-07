@@ -1,4 +1,5 @@
 using ContextBinder.Forms;
+using ContextBinder.Forms.FirstRunSteps;
 using ContextBinder.Models;
 using ContextBinder.Services;
 
@@ -41,6 +42,14 @@ try
     {
         using MainForm designerForm = new();
         Assert(designerForm.Text == "ContextBinder v2", "MainForm の引数なしコンストラクタで Designer 初期化できること");
+        using StartModeStepControl startModeStepControl = new();
+        using StorageLocationStepControl storageLocationStepControl = new();
+        using UsabilitySettingsStepControl usabilitySettingsStepControl = new();
+        using ConfirmStartStepControl confirmStartStepControl = new();
+        Assert(!startModeStepControl.IsCustomSetup, "初回セットアップ Step 1 UserControl を単体初期化できること");
+        Assert(storageLocationStepControl.SelectedStorageMode == StorageMode.Standard, "初回セットアップ Step 2 UserControl を単体初期化できること");
+        Assert(usabilitySettingsStepControl.SelectedTypeDisplayMode == TypeDisplayMode.IconAndText, "初回セットアップ Step 3 UserControl を単体初期化できること");
+        Assert(confirmStartStepControl.Controls.Count > 0, "初回セットアップ Step 4 UserControl を単体初期化できること");
     });
 
     StorageLocation standardLocation = standardLocationService.InitializeFirstRun(StorageMode.Standard);

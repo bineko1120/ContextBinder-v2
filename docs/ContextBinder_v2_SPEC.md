@@ -1456,3 +1456,67 @@ ContextBinderは参照先を管理するツールであり、実ファイルの�
 - グローバルホットキー
 - Windows自動起動
 - インストーラー版
+
+---
+
+## 36. UI実装方針：Visual Studio Designer-first
+
+ContextBinder v2 のUIは、原則として Visual Studio WinForms Designer で編集しやすい構成にする。
+
+### 36.1 基本方針
+
+- 固定表示されるフォーム、ボタン、ラベル、GroupBox、Panel、TableLayoutPanel、FlowLayoutPanel は、可能な限り `.Designer.cs` の `InitializeComponent()` に置く。
+- フォームやUserControlは Visual Studio Designer で開いたとき、実画面に近い状態で見えるようにする。
+- ユーザーが文言、余白、サイズ、配置を直感的に調整できるようにする。
+- 実行時コードでDesigner管理コントロールを作り直さない。
+- 実行時コードでDesigner上の `Text` / `Size` / `Margin` / `Padding` / `Dock` / `Anchor` を不用意に上書きしない。
+- 動的に変える必要がある値だけ、専用メソッドで更新する。
+- UIロジックと保存処理、データ処理を混ぜない。
+- C# WinForms のまま維持し、VB.NET化、WPF移行、WebView2化は行わない。
+
+### 36.2 UserControl方針
+
+複数ステップ画面や複雑な設定画面は、Form内にすべて動的生成するのではなく、Designerで編集できるUserControlに分割する。
+
+例：
+
+- 初回セットアップ Step 1: `StartModeStepControl`
+- 初回セットアップ Step 2: `StorageLocationStepControl`
+- 初回セットアップ Step 3: `UsabilitySettingsStepControl`
+- 初回セットアップ Step 4: `ConfirmStartStepControl`
+- 設定画面の各カテゴリ
+- ごみ箱画面
+- インポート/エクスポート画面
+- 検索/絞り込みUI
+
+### 36.3 今後の未実装機能のUI方針
+
+以下を実装するときも、Designer-firstを原則にする。
+
+- `SettingsForm`
+- `ItemEditForm`
+- `TemplateEditForm`
+- `ItemDetailForm`
+- `CopyMoveDialog`
+- `RecycleBinForm`
+- `ImportExportDialog`
+- `BackupRestoreDialog`
+- 検索/絞り込みUI
+- ごみ箱画面
+- 保存場所変更/移行画面
+
+各画面は原則として、固定UIを `.Designer.cs`、処理を `.cs` 本体、共有文言や動的文言を必要に応じて `UiTexts.cs` に置く。
+
+### 36.4 例外ルール
+
+以下は動的生成を許可する。
+
+- 登録項目に応じて変わる一覧行
+- 検索結果
+- グループ一覧
+- アイコンの実体読み込み
+- 設定値に応じて変わる確認サマリー
+- 実行時データに応じた警告表示
+- 動的に増減する小さな表示部品
+
+ただし、動的生成が必要な場合でも、できるだけDesigner管理の親Panel / FlowLayoutPanel / TableLayoutPanel上に追加する。

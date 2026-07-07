@@ -47,6 +47,6 @@ dotnet run --project .\tests\ContextBinder.Tests\ContextBinder.Tests.csproj
 
 このリポジトリはMVPの土台です。D&D、設定画面、詳細画面、バックアップ、ごみ箱、インポート・エクスポートなどは段階的に実装します。
 
-初回セットアップ画面やメイン画面下部の文言を調整する場合は `src/ContextBinder/UiTexts.cs`、余白や高さを軽く調整する場合は `src/ContextBinder/UiLayoutSettings.cs` を編集してください。詳しくは `docs/UI_EDITING_GUIDE.md` を参照してください。
+UI開発は Visual Studio WinForms Designer-first 方針です。文言や余白を調整する場合は、まず Visual Studio Designer、`src/ContextBinder/UiTexts.cs`、`src/ContextBinder/UiLayoutSettings.cs` を確認してください。詳しくは `docs/UI_EDITING_GUIDE.md` と `docs/UI_ARCHITECTURE.md` を参照してください。
 
 同梱アイコン・画像素材の無断転載、再配布、素材としての流用を禁止します。

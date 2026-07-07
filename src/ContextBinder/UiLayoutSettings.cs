@@ -1,7 +1,8 @@
 namespace ContextBinder;
 
-// User-editable UI sizing values.
-// Keep behavior and event logic in Forms/*.cs; use this file for small spacing, width, and height adjustments.
+// User-editable runtime UI sizing values.
+// Prefer Designer Margin/Padding/Size for fixed layout adjustments.
+// Keep behavior and event logic in Forms/*.cs.
 internal static class UiLayoutSettings
 {
     internal static class FirstRun

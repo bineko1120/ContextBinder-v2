@@ -2,7 +2,8 @@ using ContextBinder.Models;
 
 namespace ContextBinder;
 
-// User-editable UI text values.
+// User-editable runtime UI text values.
+// Prefer Designer Text for fixed labels that should be adjusted visually.
 // Keep layout sizing in UiLayoutSettings.cs and keep behavior/event logic in Forms/*.cs.
 internal static class UiTexts
 {
