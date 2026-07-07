@@ -1,5 +1,3 @@
-using static ContextBinder.UiTexts.FirstRunSetup;
-
 namespace ContextBinder.Forms.FirstRunSteps;
 
 public sealed partial class StartModeStepControl
@@ -44,17 +42,19 @@ public sealed partial class StartModeStepControl
         _rootPanel.TabIndex = 0;
         _rootPanel.WrapContents = false;
 
-        _headingLabel.Font = new Font(Control.DefaultFont, FontStyle.Bold);
+        _headingLabel.Font = new Font("Yu Gothic UI", 9F, FontStyle.Bold, GraphicsUnit.Point);
         _headingLabel.Name = "_headingLabel";
         _headingLabel.Size = new Size(740, 36);
-        _headingLabel.Text = WelcomeHeading;
+        _headingLabel.TabIndex = 0;
+        _headingLabel.Text = "ContextBinderへようこそ";
         _headingLabel.TextAlign = ContentAlignment.MiddleLeft;
 
         _descriptionLabel.AutoSize = true;
         _descriptionLabel.MaximumSize = new Size(740, 0);
         _descriptionLabel.Name = "_descriptionLabel";
-        _descriptionLabel.Size = new Size(740, 54);
-        _descriptionLabel.Text = WelcomeDescription;
+        _descriptionLabel.Size = new Size(740, 80);
+        _descriptionLabel.TabIndex = 1;
+        _descriptionLabel.Text = "このツールは、ファイル・フォルダ・URL・テンプレート文を\r\nグループごとにまとめて、すぐ開く/コピーできるツールです。\r\n\r\nまずは保存場所と使いやすさ設定を選びます。";
 
         _recommendedPanel.BorderStyle = BorderStyle.FixedSingle;
         _recommendedPanel.Controls.Add(_recommendedSetupRadio);
@@ -63,6 +63,7 @@ public sealed partial class StartModeStepControl
         _recommendedPanel.Name = "_recommendedPanel";
         _recommendedPanel.Padding = new Padding(10);
         _recommendedPanel.Size = new Size(740, 118);
+        _recommendedPanel.TabIndex = 2;
 
         _recommendedSetupRadio.Checked = true;
         _recommendedSetupRadio.Location = new Point(10, 10);
@@ -70,14 +71,15 @@ public sealed partial class StartModeStepControl
         _recommendedSetupRadio.Size = new Size(710, 24);
         _recommendedSetupRadio.TabIndex = 0;
         _recommendedSetupRadio.TabStop = true;
-        _recommendedSetupRadio.Text = RecommendedSetupLabel;
+        _recommendedSetupRadio.Text = "初心者おすすめ設定で始める";
         _recommendedSetupRadio.UseVisualStyleBackColor = true;
         _recommendedSetupRadio.CheckedChanged += SetupRadio_CheckedChanged;
 
         _recommendedDescriptionLabel.Location = new Point(30, 38);
         _recommendedDescriptionLabel.Name = "_recommendedDescriptionLabel";
         _recommendedDescriptionLabel.Size = new Size(690, 70);
-        _recommendedDescriptionLabel.Text = RecommendedSetupDescription;
+        _recommendedDescriptionLabel.TabIndex = 1;
+        _recommendedDescriptionLabel.Text = "迷った場合はこちらを選んでください。\r\n見やすさと安全性を優先した設定で始めます。\r\n次の画面で保存場所を選べます。\r\nおすすめ設定の内容は後で確認できます。";
 
         _customPanel.BorderStyle = BorderStyle.FixedSingle;
         _customPanel.Controls.Add(_customSetupRadio);
@@ -86,22 +88,26 @@ public sealed partial class StartModeStepControl
         _customPanel.Name = "_customPanel";
         _customPanel.Padding = new Padding(10);
         _customPanel.Size = new Size(740, 110);
+        _customPanel.TabIndex = 3;
 
         _customSetupRadio.Location = new Point(10, 10);
         _customSetupRadio.Name = "_customSetupRadio";
         _customSetupRadio.Size = new Size(710, 24);
-        _customSetupRadio.TabIndex = 1;
-        _customSetupRadio.Text = CustomSetupLabel;
+        _customSetupRadio.TabIndex = 0;
+        _customSetupRadio.Text = "カスタム設定を選ぶ";
         _customSetupRadio.UseVisualStyleBackColor = true;
         _customSetupRadio.CheckedChanged += SetupRadio_CheckedChanged;
 
         _customDescriptionLabel.Location = new Point(30, 38);
         _customDescriptionLabel.Name = "_customDescriptionLabel";
         _customDescriptionLabel.Size = new Size(690, 62);
-        _customDescriptionLabel.Text = CustomSetupDescription;
+        _customDescriptionLabel.TabIndex = 1;
+        _customDescriptionLabel.Text = "表示、ドラッグ＆ドロップ、削除確認、バックアップなどを自分で選びます。\r\nある程度使い方を決めたい人向けです。\r\n保存場所も次の画面で選べます。";
 
-        AutoScaleMode = AutoScaleMode.Dpi;
+        AutoScaleDimensions = new SizeF(8F, 20F);
+        AutoScaleMode = AutoScaleMode.Font;
         Controls.Add(_rootPanel);
+        Font = new Font("Yu Gothic UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
         Name = "StartModeStepControl";
         Size = new Size(780, 580);
         _customPanel.ResumeLayout(false);

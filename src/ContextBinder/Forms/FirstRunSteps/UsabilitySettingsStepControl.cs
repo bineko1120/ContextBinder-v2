@@ -1,5 +1,6 @@
 using ContextBinder.Models;
 using ContextBinder.Services;
+using System.ComponentModel;
 using static ContextBinder.UiTexts.FirstRunSetup;
 
 namespace ContextBinder.Forms.FirstRunSteps;
@@ -13,6 +14,11 @@ public sealed partial class UsabilitySettingsStepControl : UserControl
     {
         InitializeComponent();
         RegisterEditableControls();
+        if (LicenseManager.UsageMode == LicenseUsageMode.Designtime)
+        {
+            return;
+        }
+
         LoadSettings(AppSettingsFactory.CreateRecommended());
         SetCustomSetup(false);
     }

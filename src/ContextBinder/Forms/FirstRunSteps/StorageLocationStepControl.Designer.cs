@@ -1,5 +1,3 @@
-using static ContextBinder.UiTexts.FirstRunSetup;
-
 namespace ContextBinder.Forms.FirstRunSteps;
 
 public sealed partial class StorageLocationStepControl
@@ -62,10 +60,11 @@ public sealed partial class StorageLocationStepControl
         _rootPanel.TabIndex = 0;
         _rootPanel.WrapContents = false;
 
-        _headingLabel.Font = new Font(Control.DefaultFont, FontStyle.Bold);
+        _headingLabel.Font = new Font("Yu Gothic UI", 9F, FontStyle.Bold, GraphicsUnit.Point);
         _headingLabel.Name = "_headingLabel";
         _headingLabel.Size = new Size(740, 36);
-        _headingLabel.Text = StorageHeading;
+        _headingLabel.TabIndex = 0;
+        _headingLabel.Text = "登録内容と設定の保存場所を選んでください";
         _headingLabel.TextAlign = ContentAlignment.MiddleLeft;
 
         _standardPanel.BorderStyle = BorderStyle.FixedSingle;
@@ -75,6 +74,7 @@ public sealed partial class StorageLocationStepControl
         _standardPanel.Name = "_standardPanel";
         _standardPanel.Padding = new Padding(10);
         _standardPanel.Size = new Size(740, 118);
+        _standardPanel.TabIndex = 1;
 
         _standardStorageRadio.Checked = true;
         _standardStorageRadio.Location = new Point(10, 10);
@@ -82,14 +82,15 @@ public sealed partial class StorageLocationStepControl
         _standardStorageRadio.Size = new Size(710, 24);
         _standardStorageRadio.TabIndex = 0;
         _standardStorageRadio.TabStop = true;
-        _standardStorageRadio.Text = StandardStorageLabel;
+        _standardStorageRadio.Text = "通常の場所に保存（おすすめ）";
         _standardStorageRadio.UseVisualStyleBackColor = true;
         _standardStorageRadio.CheckedChanged += StorageOption_CheckedChanged;
 
         _standardDescriptionLabel.Location = new Point(30, 38);
         _standardDescriptionLabel.Name = "_standardDescriptionLabel";
         _standardDescriptionLabel.Size = new Size(690, 70);
-        _standardDescriptionLabel.Text = StandardStorageDescription;
+        _standardDescriptionLabel.TabIndex = 1;
+        _standardDescriptionLabel.Text = "Windowsの標準的なアプリ用フォルダに、登録内容と設定を保存します。\r\n迷った場合はこれを選んでください。\r\nアプリ本体のフォルダを移動しても、登録内容と設定は維持されます。";
 
         _portablePanel.BorderStyle = BorderStyle.FixedSingle;
         _portablePanel.Controls.Add(_portableStorageRadio);
@@ -98,19 +99,21 @@ public sealed partial class StorageLocationStepControl
         _portablePanel.Name = "_portablePanel";
         _portablePanel.Padding = new Padding(10);
         _portablePanel.Size = new Size(740, 136);
+        _portablePanel.TabIndex = 2;
 
         _portableStorageRadio.Location = new Point(10, 10);
         _portableStorageRadio.Name = "_portableStorageRadio";
         _portableStorageRadio.Size = new Size(710, 24);
-        _portableStorageRadio.TabIndex = 1;
-        _portableStorageRadio.Text = PortableStorageLabel;
+        _portableStorageRadio.TabIndex = 0;
+        _portableStorageRadio.Text = "このアプリのフォルダに保存";
         _portableStorageRadio.UseVisualStyleBackColor = true;
         _portableStorageRadio.CheckedChanged += StorageOption_CheckedChanged;
 
         _portableDescriptionLabel.Location = new Point(30, 38);
         _portableDescriptionLabel.Name = "_portableDescriptionLabel";
         _portableDescriptionLabel.Size = new Size(690, 88);
-        _portableDescriptionLabel.Text = PortableStorageDescription;
+        _portableDescriptionLabel.TabIndex = 1;
+        _portableDescriptionLabel.Text = "アプリ本体と同じ場所に ContextBinder_Data フォルダを作り、登録内容と設定を保存します。\r\nフォルダごとバックアップ・移動したい人向けです。\r\nProgram Files など書き込み権限が厳しい場所では失敗することがあります。\r\nAppDataには保存しません。";
 
         _customPanel.BorderStyle = BorderStyle.FixedSingle;
         _customPanel.Controls.Add(_customStorageRadio);
@@ -120,19 +123,21 @@ public sealed partial class StorageLocationStepControl
         _customPanel.Name = "_customPanel";
         _customPanel.Padding = new Padding(10);
         _customPanel.Size = new Size(740, 164);
+        _customPanel.TabIndex = 3;
 
         _customStorageRadio.Location = new Point(10, 10);
         _customStorageRadio.Name = "_customStorageRadio";
         _customStorageRadio.Size = new Size(710, 24);
-        _customStorageRadio.TabIndex = 2;
-        _customStorageRadio.Text = CustomStorageLabel;
+        _customStorageRadio.TabIndex = 0;
+        _customStorageRadio.Text = "自分で選んだ場所に保存";
         _customStorageRadio.UseVisualStyleBackColor = true;
         _customStorageRadio.CheckedChanged += StorageOption_CheckedChanged;
 
         _customDescriptionLabel.Location = new Point(30, 38);
         _customDescriptionLabel.Name = "_customDescriptionLabel";
         _customDescriptionLabel.Size = new Size(690, 76);
-        _customDescriptionLabel.Text = CustomStorageDescription;
+        _customDescriptionLabel.TabIndex = 1;
+        _customDescriptionLabel.Text = "自分で選んだフォルダに登録内容と設定を保存します。\r\nOneDrive、別ドライブ、外部ドライブなどを使いたい人向けです。\r\n同期中、権限不足、外部ドライブ未接続には注意してください。\r\nAppDataには保存しません。";
 
         _customPathPanel.Controls.Add(_customDirectoryTextBox);
         _customPathPanel.Controls.Add(_browseButton);
@@ -140,7 +145,7 @@ public sealed partial class StorageLocationStepControl
         _customPathPanel.Location = new Point(30, 122);
         _customPathPanel.Name = "_customPathPanel";
         _customPathPanel.Size = new Size(690, 32);
-        _customPathPanel.TabIndex = 3;
+        _customPathPanel.TabIndex = 2;
         _customPathPanel.WrapContents = false;
 
         _customDirectoryTextBox.Name = "_customDirectoryTextBox";
@@ -151,23 +156,27 @@ public sealed partial class StorageLocationStepControl
         _browseButton.Name = "_browseButton";
         _browseButton.Size = new Size(92, 29);
         _browseButton.TabIndex = 1;
-        _browseButton.Text = BrowseButton;
+        _browseButton.Text = "参照...";
         _browseButton.UseVisualStyleBackColor = true;
         _browseButton.Click += BrowseButton_Click;
 
         _storageDescriptionLabel.Margin = new Padding(0, 8, 0, 0);
         _storageDescriptionLabel.Name = "_storageDescriptionLabel";
         _storageDescriptionLabel.Size = new Size(740, 54);
-        _storageDescriptionLabel.Text = StandardStorageCurrentDescription;
+        _storageDescriptionLabel.TabIndex = 4;
+        _storageDescriptionLabel.Text = "Windowsの標準的なアプリ用フォルダに登録内容と設定を保存します。";
 
         _storagePreviewLabel.BorderStyle = BorderStyle.FixedSingle;
         _storagePreviewLabel.Name = "_storagePreviewLabel";
         _storagePreviewLabel.Padding = new Padding(8);
         _storagePreviewLabel.Size = new Size(740, 48);
-        _storagePreviewLabel.Text = $"{StoragePreviewPrefix}: %AppData%\\ContextBinder\\";
+        _storagePreviewLabel.TabIndex = 5;
+        _storagePreviewLabel.Text = "保存先プレビュー: %AppData%\\ContextBinder\\";
 
-        AutoScaleMode = AutoScaleMode.Dpi;
+        AutoScaleDimensions = new SizeF(8F, 20F);
+        AutoScaleMode = AutoScaleMode.Font;
         Controls.Add(_rootPanel);
+        Font = new Font("Yu Gothic UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
         Name = "StorageLocationStepControl";
         Size = new Size(780, 580);
         _customPathPanel.ResumeLayout(false);

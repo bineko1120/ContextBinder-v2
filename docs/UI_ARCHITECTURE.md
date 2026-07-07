@@ -11,6 +11,8 @@ ContextBinder v2 のUI開発は、Visual Studio WinForms Designer-first を基�
 - `UiTexts.cs`: ToolTip、エラー文、確認メッセージ、動的サマリー、設定値の表示名
 - `UiLayoutSettings.cs`: 動的エリアの既定サイズ、アイコンサイズ、計算が必要な高さ/幅
 
+`.Designer.cs` の `InitializeComponent()` は Visual Studio Designer が処理しやすい単純な代入を基本にします。外部定数、`UiTexts` 参照、`UiLayoutSettings` 参照、`nameof(...)`、複雑な計算式、ヘルパーメソッド呼び出しはなるべく置きません。
+
 ## 新しい画面を追加するとき
 
 1. FormまたはUserControlを追加する
@@ -20,6 +22,8 @@ ContextBinder v2 のUI開発は、Visual Studio WinForms Designer-first を基�
 5. Designerで編集した `Text` / `Size` / `Margin` / `Padding` / `Dock` / `Anchor` を実行時コードで不用意に上書きしない
 6. 動的に変える必要がある値だけ、専用メソッドで更新する
 7. スモークテストを追加する
+
+Designerで見えてほしい固定文言は、Designer管理コントロールの `Text` に直接置きます。ToolTip、エラー文、確認メッセージ、動的サマリーだけ `UiTexts.cs` を優先します。
 
 ## 固定UIと動的UIの分け方
 
@@ -68,6 +72,7 @@ Designerで見える固定UIにするもの：
 
 - 既存のDesigner管理UIを作り直さない
 - Designerでユーザーが調整した文言、余白、サイズ、配置を不用意に上書きしない
+- Designer.csにDesigner非対応の式、外部定数参照、`UiTexts` 参照、`UiLayoutSettings` 参照、`nameof(...)` を入れない
 - MainForm下部の「使い方のヒント」「アイコンの意味」を機能追加で消さない
 - 表示/非表示設定を維持する
 - 保存処理やデータ処理をFormイベントへ詰め込まない

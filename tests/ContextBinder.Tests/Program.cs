@@ -40,8 +40,16 @@ try
 
     RunStaTest(() =>
     {
+        string designerDataDirectory = Path.Combine(Path.GetTempPath(), "ContextBinderDesigner");
+        string designerSettingsPath = Path.Combine(designerDataDirectory, "settings.json");
+        string designerStorePath = Path.Combine(designerDataDirectory, "contextbinder.store.json");
+        bool hadDesignerSettingsFile = File.Exists(designerSettingsPath);
+        bool hadDesignerStoreFile = File.Exists(designerStorePath);
+
         using MainForm designerForm = new();
         Assert(designerForm.Text == "ContextBinder v2", "MainForm の引数なしコンストラクタで Designer 初期化できること");
+        Assert(File.Exists(designerSettingsPath) == hadDesignerSettingsFile, "MainForm の Designer 初期化で settings.json を作成しないこと");
+        Assert(File.Exists(designerStorePath) == hadDesignerStoreFile, "MainForm の Designer 初期化で contextbinder.store.json を作成しないこと");
         using StartModeStepControl startModeStepControl = new();
         using StorageLocationStepControl storageLocationStepControl = new();
         using UsabilitySettingsStepControl usabilitySettingsStepControl = new();

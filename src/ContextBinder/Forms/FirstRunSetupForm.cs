@@ -1,6 +1,7 @@
 using ContextBinder.Forms.FirstRunSteps;
 using ContextBinder.Models;
 using ContextBinder.Services;
+using System.ComponentModel;
 using static ContextBinder.UiTexts.FirstRunSetup;
 
 namespace ContextBinder.Forms;
@@ -29,6 +30,11 @@ public sealed partial class FirstRunSetupForm : Form
 
         InitializeStepControls();
         WireShellEvents();
+        if (LicenseManager.UsageMode == LicenseUsageMode.Designtime)
+        {
+            return;
+        }
+
         RenderCurrentStep();
     }
 

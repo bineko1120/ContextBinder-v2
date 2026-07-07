@@ -70,6 +70,7 @@ Step 4の確認内容、MainFormのアイコン画像、登録項目の一覧行
 - ToolTip、エラー文、確認メッセージ、動的サマリーは `UiTexts.cs` を優先する
 - 設定値の表示名マッピングは `UiTexts.cs` に置く
 - Codexは実行時にDesignerの `Text` を必要以上に上書きしない
+- `.Designer.cs` の `InitializeComponent()` には、`UiTexts.cs` への参照をなるべく置かない
 
 現在は移行途中のため、一部の固定文言も `UiTexts.cs` からDesigner管理コントロールへ初期設定しています。文言だけを変えたい場合は、まず `UiTexts.cs` を確認してください。
 
@@ -78,6 +79,8 @@ Step 4の確認内容、MainFormのアイコン画像、登録項目の一覧行
 `src/ContextBinder/UiLayoutSettings.cs` は、実行時に計算が必要な高さ/幅、動的エリアの最小高さ、アイコンサイズなどをまとめる場所です。
 
 固定の余白や固定サイズは、可能な範囲でDesigner側の `Margin` / `Padding` / `Size` を調整してください。
+
+`.Designer.cs` の `InitializeComponent()` には、`UiLayoutSettings.cs` への参照や複雑な計算式をなるべく置かない方針です。
 
 ## Codexに依頼するときの注意文
 
@@ -88,6 +91,7 @@ CodexにUI追加や修正を頼むときは、次の文を添えると安全で�
 Designerで調整した Text / Size / Margin / Padding / Dock / Anchor を、必要なく上書きしないでください。
 固定UIは可能な限り .Designer.cs / UserControl で管理してください。
 処理ロジックは .cs 本体に分離してください。
+Designer.cs に Designer が処理しづらい外部定数参照、UiTexts参照、UiLayoutSettings参照、nameof、複雑な式を入れないでください。
 ```
 
 ## 今後の実装ルール
@@ -97,3 +101,4 @@ Designerで調整した Text / Size / Margin / Padding / Dock / Anchor を、必
 - MainForm下部の説明/アイコンの意味エリアは、機能追加で上書きしない
 - ユーザーが調整する領域と、アプリロジック領域を混ぜない
 - 新機能を追加する場合も、既存の説明表示ON/OFF設定を維持する
+- Codexは今後、Designer.csにDesigner非対応の式や外部参照を入れない

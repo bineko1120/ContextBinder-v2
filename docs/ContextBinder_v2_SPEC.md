@@ -1473,6 +1473,10 @@ ContextBinder v2 のUIは、原則として Visual Studio WinForms Designer で�
 - 動的に変える必要がある値だけ、専用メソッドで更新する。
 - UIロジックと保存処理、データ処理を混ぜない。
 - C# WinForms のまま維持し、VB.NET化、WPF移行、WebView2化は行わない。
+- `.Designer.cs` の `InitializeComponent()` には、外部定数、`UiTexts` 参照、`UiLayoutSettings` 参照、`nameof(...)`、複雑な計算式、ヘルパーメソッド呼び出しをなるべく置かない。
+- Designerで見えてほしい固定文言は、Designer管理コントロールの `Text` に直接置く。
+- ToolTip、エラー文、確認メッセージ、動的サマリー、設定値の表示名は `UiTexts.cs` に置く。
+- 固定UIのサイズや余白はDesignerで調整できるようにし、`UiLayoutSettings.cs` は動的レイアウト計算が必要な箇所に限定する。
 
 ### 36.2 UserControl方針
 

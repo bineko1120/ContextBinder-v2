@@ -45,10 +45,9 @@ public sealed partial class MainForm : Form
         _dragDropService = new DragDropService(_fileTypeDetector);
 
         InitializeComponent();
-        Icon = _iconAssetService.GetAppIcon();
+        _bottomRowStyle = _rootLayout.RowStyles[1];
 
         ConfigureItemGridColumns();
-        BuildIconLegend();
         BuildContextMenu();
         ConfigureToolTips();
         WireEvents();
@@ -61,6 +60,8 @@ public sealed partial class MainForm : Form
             return;
         }
 
+        Icon = _iconAssetService.GetAppIcon();
+        BuildIconLegend();
         BuildTrayIcon();
         LoadState();
     }
