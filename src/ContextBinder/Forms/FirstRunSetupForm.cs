@@ -11,11 +11,6 @@ public sealed partial class FirstRunSetupForm : Form
     private const int LastStepIndex = 3;
 
     private readonly StorageLocationService _storageLocationService;
-    private readonly Label _stepLabel = new();
-    private readonly Panel _contentPanel = new();
-    private readonly Button _backButton = new();
-    private readonly Button _nextButton = new();
-    private readonly Button _cancelButton = new();
 
     private readonly RadioButton _recommendedSetupRadio = new();
     private readonly RadioButton _customSetupRadio = new();
@@ -55,20 +50,11 @@ public sealed partial class FirstRunSetupForm : Form
     {
         _storageLocationService = storageLocationService ?? new StorageLocationService();
 
-        Text = WindowTitle;
-        StartPosition = FormStartPosition.CenterScreen;
-        FormBorderStyle = FormBorderStyle.Sizable;
-        MaximizeBox = true;
-        MinimizeBox = false;
-        AutoScaleMode = AutoScaleMode.Dpi;
-        ClientSize = new Size(FirstRunLayout.InitialWidth, FirstRunLayout.InitialHeight);
-        MinimumSize = new Size(FirstRunLayout.MinimumWidth, FirstRunLayout.MinimumHeight);
-        Font = SystemFonts.MessageBoxFont;
-
+        InitializeComponent();
         InitializeSetupControls();
         InitializeStorageControls();
         InitializeSettingsControls();
-        BuildLayout();
+        WireShellEvents();
         RenderCurrentStep();
     }
 
@@ -155,59 +141,10 @@ public sealed partial class FirstRunSetupForm : Form
         _editableSettingsControls.Add(checkBox);
     }
 
-    private void BuildLayout()
+    private void WireShellEvents()
     {
-        TableLayoutPanel root = new()
-        {
-            Dock = DockStyle.Fill,
-            Padding = new Padding(FirstRunLayout.RootPadding),
-            ColumnCount = 1,
-            RowCount = 3
-        };
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, FirstRunLayout.StepHeaderHeight));
-        root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, FirstRunLayout.FooterButtonHeight));
-
-        _stepLabel.Dock = DockStyle.Fill;
-        _stepLabel.TextAlign = ContentAlignment.MiddleLeft;
-        _stepLabel.Font = new Font(Font, FontStyle.Bold);
-
-        _contentPanel.Dock = DockStyle.Fill;
-        _contentPanel.BorderStyle = BorderStyle.FixedSingle;
-        _contentPanel.Padding = new Padding(FirstRunLayout.ContentPadding);
-
-        TableLayoutPanel buttonPanel = new()
-        {
-            Dock = DockStyle.Fill,
-            ColumnCount = 4
-        };
-        buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, FirstRunLayout.WizardButtonWidth));
-        buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, FirstRunLayout.WizardButtonWidth));
-        buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, FirstRunLayout.WizardButtonWidth));
-
-        _backButton.Text = BackButton;
-        _backButton.Dock = DockStyle.Fill;
         _backButton.Click += (_, _) => MoveStep(-1);
-
-        _nextButton.Dock = DockStyle.Fill;
         _nextButton.Click += NextButton_Click;
-
-        _cancelButton.Text = ContextBinder.UiTexts.FirstRunSetup.CancelButton;
-        _cancelButton.Dock = DockStyle.Fill;
-        _cancelButton.DialogResult = DialogResult.Cancel;
-
-        buttonPanel.Controls.Add(_backButton, 1, 0);
-        buttonPanel.Controls.Add(_nextButton, 2, 0);
-        buttonPanel.Controls.Add(_cancelButton, 3, 0);
-
-        root.Controls.Add(_stepLabel, 0, 0);
-        root.Controls.Add(_contentPanel, 0, 1);
-        root.Controls.Add(buttonPanel, 0, 2);
-        Controls.Add(root);
-
-        AcceptButton = _nextButton;
-        CancelButton = _cancelButton;
     }
 
     private void RenderCurrentStep()

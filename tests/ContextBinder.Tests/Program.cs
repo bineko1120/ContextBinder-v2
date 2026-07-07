@@ -33,6 +33,14 @@ try
         using FirstRunSetupForm setupForm = new(standardLocationService);
         Assert(setupForm.SelectedStorageMode == StorageMode.Standard, "初回セットアップフォームの既定保存場所が標準モードであること");
         Assert(setupForm.SelectedAppSettings.TypeDisplayMode == TypeDisplayMode.IconAndText, "初回セットアップフォームの既定設定が初心者おすすめであること");
+        using FirstRunSetupForm designerSetupForm = new();
+        Assert(designerSetupForm.Text.Contains("ContextBinder", StringComparison.Ordinal), "FirstRunSetupForm の引数なしコンストラクタで Designer 初期化できること");
+    });
+
+    RunStaTest(() =>
+    {
+        using MainForm designerForm = new();
+        Assert(designerForm.Text == "ContextBinder v2", "MainForm の引数なしコンストラクタで Designer 初期化できること");
     });
 
     StorageLocation standardLocation = standardLocationService.InitializeFirstRun(StorageMode.Standard);
