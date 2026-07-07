@@ -245,6 +245,7 @@ AppDataには保存しません。
     internal static class MainForm
     {
         public const string WindowTitle = "ContextBinder v2";
+        public const string DesignerPreviewStatus = "Designer preview";
         public const string GroupListTitle = "グループ一覧";
         public const string ShowBeginnerHintsToggle = "初心者向け説明を表示";
         public const string ShowIconMeaningToggle = "アイコンの意味を表示";

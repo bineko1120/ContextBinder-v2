@@ -18,21 +18,6 @@ public sealed partial class MainForm : Form
     private readonly DragDropService _dragDropService;
     private readonly ToolTip _toolTip = new();
 
-    private readonly ListBox _groupListBox = new();
-    private readonly DataGridView _itemGrid = new();
-    private readonly CheckBox _showBeginnerHintsCheckBox = new();
-    private readonly CheckBox _showIconLegendCheckBox = new();
-    private readonly Label _beginnerHintsLabel = new();
-    private readonly Label _statusLabel = new();
-    private readonly Panel _beginnerHintsPanel = new();
-    private readonly Panel _iconLegendPanel = new();
-    private readonly FlowLayoutPanel _iconLegendFlow = new();
-    private readonly ContextMenuStrip _itemContextMenu = new();
-    private readonly NotifyIcon _notifyIcon = new();
-    private readonly ContextMenuStrip _trayMenu = new();
-    private readonly TableLayoutPanel _bottomPanel = new();
-
-    private Button? _detailButton;
     private ToolStripItem? _detailContextMenuItem;
     private RowStyle? _bottomRowStyle;
     private bool _loadingSettings;
@@ -42,27 +27,58 @@ public sealed partial class MainForm : Form
     private bool _allowExit;
     private bool _runtimeResourcesDisposed;
 
+    public MainForm()
+        : this(CreateDesignerStoreService(), new IconAssetService(), designMode: true)
+    {
+    }
+
     public MainForm(StoreService storeService, IconAssetService? iconAssetService = null)
+        : this(storeService, iconAssetService, designMode: false)
+    {
+    }
+
+    private MainForm(StoreService storeService, IconAssetService? iconAssetService, bool designMode)
     {
         _storeService = storeService;
         _iconAssetService = iconAssetService ?? new IconAssetService();
         _itemActionService = new ItemActionService(_clipboardService);
         _dragDropService = new DragDropService(_fileTypeDetector);
 
-        Text = MainFormTexts.WindowTitle;
-        AutoScaleMode = AutoScaleMode.Dpi;
-        MinimumSize = new Size(MainFormLayout.MinimumWidth, MainFormLayout.MinimumHeight);
-        Size = new Size(MainFormLayout.InitialWidth, MainFormLayout.InitialHeight);
-        StartPosition = FormStartPosition.CenterScreen;
-        Font = SystemFonts.MessageBoxFont;
-        AllowDrop = true;
+        InitializeComponent();
         Icon = _iconAssetService.GetAppIcon();
 
-        BuildLayout();
+        ConfigureItemGridColumns();
+        BuildIconLegend();
         BuildContextMenu();
-        BuildTrayIcon();
+        ConfigureToolTips();
         WireEvents();
+
+        if (designMode)
+        {
+            _settings = AppSettingsFactory.CreateRecommended();
+            ApplySettingsToView();
+            SetStatus(MainFormTexts.DesignerPreviewStatus);
+            return;
+        }
+
+        BuildTrayIcon();
         LoadState();
+    }
+
+    private static StoreService CreateDesignerStoreService()
+    {
+        string dataDirectory = Path.Combine(Path.GetTempPath(), "ContextBinderDesigner");
+        StorageLocation location = new()
+        {
+            Mode = StorageMode.Standard,
+            DataDirectory = dataDirectory,
+            StoreFilePath = Path.Combine(dataDirectory, "contextbinder.store.json"),
+            SettingsFilePath = Path.Combine(dataDirectory, "settings.json"),
+            BackupDirectory = Path.Combine(dataDirectory, "backups"),
+            TrashDirectory = Path.Combine(dataDirectory, "trash")
+        };
+
+        return new StoreService(location, new BackupService());
     }
 
     protected override void OnFormClosing(FormClosingEventArgs e)
@@ -89,164 +105,6 @@ public sealed partial class MainForm : Form
         }
 
         base.Dispose(disposing);
-    }
-
-    private void BuildLayout()
-    {
-        TableLayoutPanel root = new()
-        {
-            Dock = DockStyle.Fill,
-            ColumnCount = 3,
-            RowCount = 2,
-            Padding = new Padding(MainFormLayout.RootPadding)
-        };
-        root.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, MainFormLayout.GroupColumnWidth));
-        root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        root.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, MainFormLayout.ActionColumnWidth));
-        root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, MainFormLayout.InitialBottomHeight));
-        _bottomRowStyle = root.RowStyles[1];
-
-        Panel groupPanel = new()
-        {
-            Dock = DockStyle.Fill,
-            Padding = new Padding(0, 0, 8, 0)
-        };
-        Label groupLabel = new()
-        {
-            Dock = DockStyle.Top,
-            Height = MainFormLayout.GroupHeaderHeight,
-            Text = MainFormTexts.GroupListTitle,
-            TextAlign = ContentAlignment.MiddleLeft
-        };
-        _groupListBox.Dock = DockStyle.Fill;
-        groupPanel.Controls.Add(_groupListBox);
-        groupPanel.Controls.Add(groupLabel);
-
-        _itemGrid.Dock = DockStyle.Fill;
-        _itemGrid.AllowUserToAddRows = false;
-        _itemGrid.AllowUserToDeleteRows = false;
-        _itemGrid.AllowUserToResizeRows = false;
-        _itemGrid.AutoGenerateColumns = false;
-        _itemGrid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-        _itemGrid.BackgroundColor = SystemColors.Window;
-        _itemGrid.BorderStyle = BorderStyle.FixedSingle;
-        _itemGrid.MultiSelect = false;
-        _itemGrid.ReadOnly = true;
-        _itemGrid.RowTemplate.Height = MainFormLayout.GridRowHeight;
-        _itemGrid.RowHeadersVisible = false;
-        _itemGrid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-        _itemGrid.ContextMenuStrip = _itemContextMenu;
-        ConfigureItemGridColumns();
-
-        FlowLayoutPanel actionPanel = new()
-        {
-            Dock = DockStyle.Fill,
-            FlowDirection = FlowDirection.TopDown,
-            WrapContents = false,
-            AutoScroll = true,
-            Padding = new Padding(8, 0, 0, 0)
-        };
-
-        Button detailButton = CreateActionButton(MainFormTexts.DetailButton, DetailSelectedButton_Click);
-        _detailButton = detailButton;
-        actionPanel.Controls.AddRange([
-            CreateActionButton(MainFormTexts.AddGroupButton, AddGroupButton_Click),
-            CreateActionButton(MainFormTexts.AddFileButton, AddFileButton_Click),
-            CreateActionButton(MainFormTexts.AddFolderButton, AddFolderButton_Click),
-            CreateActionButton(MainFormTexts.AddUrlButton, AddUrlButton_Click),
-            CreateActionButton(MainFormTexts.AddTemplateButton, AddTemplateButton_Click),
-            CreateActionButton(MainFormTexts.OpenButton, OpenSelectedButton_Click),
-            CreateActionButton(MainFormTexts.CopyButton, CopySelectedButton_Click),
-            CreateActionButton(MainFormTexts.EditButton, EditSelectedButton_Click),
-            detailButton,
-            CreateActionButton(MainFormTexts.DeleteButton, DeleteSelectedButton_Click)
-        ]);
-
-        BuildBottomPanel();
-
-        root.Controls.Add(groupPanel, 0, 0);
-        root.Controls.Add(_itemGrid, 1, 0);
-        root.Controls.Add(actionPanel, 2, 0);
-        root.Controls.Add(_bottomPanel, 0, 1);
-        root.SetColumnSpan(_bottomPanel, 3);
-        Controls.Add(root);
-    }
-
-    private void BuildBottomPanel()
-    {
-        _bottomPanel.Dock = DockStyle.Fill;
-        _bottomPanel.ColumnCount = 1;
-        _bottomPanel.RowCount = 3;
-        _bottomPanel.Padding = new Padding(0, MainFormLayout.BottomTopPadding, 0, 0);
-        _bottomPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, MainFormLayout.ToggleRowHeight));
-        _bottomPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, MainFormLayout.BeginnerHintsHeight));
-        _bottomPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, MainFormLayout.IconMeaningHeight));
-
-        FlowLayoutPanel togglePanel = new()
-        {
-            Dock = DockStyle.Fill,
-            FlowDirection = FlowDirection.LeftToRight,
-            WrapContents = true
-        };
-        _showBeginnerHintsCheckBox.Text = MainFormTexts.ShowBeginnerHintsToggle;
-        _showBeginnerHintsCheckBox.Width = MainFormLayout.ToggleCheckBoxWidth;
-        _showBeginnerHintsCheckBox.CheckedChanged += DisplayToggleCheckBox_CheckedChanged;
-        _showIconLegendCheckBox.Text = MainFormTexts.ShowIconMeaningToggle;
-        _showIconLegendCheckBox.Width = MainFormLayout.ToggleCheckBoxWidth;
-        _showIconLegendCheckBox.CheckedChanged += DisplayToggleCheckBox_CheckedChanged;
-        _statusLabel.AutoSize = false;
-        _statusLabel.Width = MainFormLayout.StatusLabelWidth;
-        _statusLabel.Height = MainFormLayout.StatusLabelHeight;
-        _statusLabel.TextAlign = ContentAlignment.MiddleLeft;
-        _statusLabel.AutoEllipsis = true;
-        togglePanel.Controls.Add(_showBeginnerHintsCheckBox);
-        togglePanel.Controls.Add(_showIconLegendCheckBox);
-        togglePanel.Controls.Add(_statusLabel);
-
-        _beginnerHintsPanel.Dock = DockStyle.Fill;
-        _beginnerHintsPanel.BorderStyle = BorderStyle.FixedSingle;
-        _beginnerHintsPanel.Padding = new Padding(8);
-        TableLayoutPanel hintsLayout = new()
-        {
-            Dock = DockStyle.Fill,
-            ColumnCount = 1,
-            RowCount = 2
-        };
-        hintsLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, MainFormLayout.BottomTitleHeight));
-        hintsLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        Label hintsTitleLabel = CreateBottomTitleLabel(MainFormTexts.BeginnerHintsTitle);
-        _beginnerHintsLabel.Dock = DockStyle.Fill;
-        _beginnerHintsLabel.TextAlign = ContentAlignment.TopLeft;
-        _beginnerHintsLabel.Text = MainFormTexts.BeginnerHintsText;
-        hintsLayout.Controls.Add(hintsTitleLabel, 0, 0);
-        hintsLayout.Controls.Add(_beginnerHintsLabel, 0, 1);
-        _beginnerHintsPanel.Controls.Add(hintsLayout);
-
-        _iconLegendPanel.Dock = DockStyle.Fill;
-        _iconLegendPanel.BorderStyle = BorderStyle.FixedSingle;
-        _iconLegendPanel.Padding = new Padding(8);
-        TableLayoutPanel iconLayout = new()
-        {
-            Dock = DockStyle.Fill,
-            ColumnCount = 1,
-            RowCount = 2
-        };
-        iconLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, MainFormLayout.BottomTitleHeight));
-        iconLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        Label iconTitleLabel = CreateBottomTitleLabel(MainFormTexts.IconMeaningTitle);
-        _iconLegendFlow.Dock = DockStyle.Fill;
-        _iconLegendFlow.FlowDirection = FlowDirection.LeftToRight;
-        _iconLegendFlow.WrapContents = true;
-        _iconLegendFlow.AutoScroll = true;
-        iconLayout.Controls.Add(iconTitleLabel, 0, 0);
-        iconLayout.Controls.Add(_iconLegendFlow, 0, 1);
-        _iconLegendPanel.Controls.Add(iconLayout);
-        BuildIconLegend();
-
-        _bottomPanel.Controls.Add(togglePanel, 0, 0);
-        _bottomPanel.Controls.Add(_beginnerHintsPanel, 0, 1);
-        _bottomPanel.Controls.Add(_iconLegendPanel, 0, 2);
     }
 
     private void BuildIconLegend()
@@ -344,20 +202,6 @@ public sealed partial class MainForm : Form
         });
     }
 
-    private Button CreateActionButton(ContextBinder.UiTexts.ActionText actionText, EventHandler clickHandler)
-    {
-        Button button = new()
-        {
-            Text = actionText.Label,
-            Width = MainFormLayout.ActionButtonWidth,
-            Height = MainFormLayout.ActionButtonHeight,
-            Margin = new Padding(0, 0, 0, MainFormLayout.ActionButtonBottomMargin)
-        };
-        button.Click += clickHandler;
-        _toolTip.SetToolTip(button, actionText.ToolTip);
-        return button;
-    }
-
     private void BuildContextMenu()
     {
         _itemContextMenu.Items.Add(MainFormTexts.OpenButton.Label, null, OpenSelectedButton_Click);
@@ -368,6 +212,20 @@ public sealed partial class MainForm : Form
         _itemContextMenu.Items.Add(MainFormTexts.DeleteButton.Label, null, DeleteSelectedButton_Click);
 
         // TODO: 種類別メニュー、置いてあるフォルダーを開く、タイトルコピー、グループ間コピー/移動を追加する。
+    }
+
+    private void ConfigureToolTips()
+    {
+        _toolTip.SetToolTip(_addGroupButton, MainFormTexts.AddGroupButton.ToolTip);
+        _toolTip.SetToolTip(_addFileButton, MainFormTexts.AddFileButton.ToolTip);
+        _toolTip.SetToolTip(_addFolderButton, MainFormTexts.AddFolderButton.ToolTip);
+        _toolTip.SetToolTip(_addUrlButton, MainFormTexts.AddUrlButton.ToolTip);
+        _toolTip.SetToolTip(_addTemplateButton, MainFormTexts.AddTemplateButton.ToolTip);
+        _toolTip.SetToolTip(_openButton, MainFormTexts.OpenButton.ToolTip);
+        _toolTip.SetToolTip(_copyButton, MainFormTexts.CopyButton.ToolTip);
+        _toolTip.SetToolTip(_editButton, MainFormTexts.EditButton.ToolTip);
+        _toolTip.SetToolTip(_detailButton, MainFormTexts.DetailButton.ToolTip);
+        _toolTip.SetToolTip(_deleteButton, MainFormTexts.DeleteButton.ToolTip);
     }
 
     private void BuildTrayIcon()
@@ -384,6 +242,18 @@ public sealed partial class MainForm : Form
 
     private void WireEvents()
     {
+        _addGroupButton.Click += AddGroupButton_Click;
+        _addFileButton.Click += AddFileButton_Click;
+        _addFolderButton.Click += AddFolderButton_Click;
+        _addUrlButton.Click += AddUrlButton_Click;
+        _addTemplateButton.Click += AddTemplateButton_Click;
+        _openButton.Click += OpenSelectedButton_Click;
+        _copyButton.Click += CopySelectedButton_Click;
+        _editButton.Click += EditSelectedButton_Click;
+        _detailButton.Click += DetailSelectedButton_Click;
+        _deleteButton.Click += DeleteSelectedButton_Click;
+        _showBeginnerHintsCheckBox.CheckedChanged += DisplayToggleCheckBox_CheckedChanged;
+        _showIconLegendCheckBox.CheckedChanged += DisplayToggleCheckBox_CheckedChanged;
         _groupListBox.SelectedIndexChanged += (_, _) => RefreshItemGrid();
         _itemGrid.CellDoubleClick += (_, _) => OpenSelectedItem();
         _itemGrid.MouseDown += ItemGrid_MouseDown;
