@@ -138,7 +138,7 @@ public sealed class StoreService
 
     private AppSettings CreateDefaultSettings()
     {
-        AppSettings settings = new();
+        AppSettings settings = AppSettingsFactory.CreateRecommended();
         ApplyLocationDefaults(settings);
         return settings;
     }

@@ -63,7 +63,7 @@ internal static class Program
 
         while (true)
         {
-            using FirstRunSetupForm setupForm = new();
+            using FirstRunSetupForm setupForm = new(storageLocationService);
             if (setupForm.ShowDialog() != DialogResult.OK)
             {
                 return null;
@@ -76,7 +76,7 @@ internal static class Program
                     setupForm.CustomStorageDirectory);
 
                 StoreService storeService = new(location, new BackupService());
-                storeService.SaveSettings(storageLocationService.CreateInitialSettings(location));
+                storeService.SaveSettings(storageLocationService.CreateInitialSettings(location, setupForm.SelectedAppSettings));
                 storeService.EnsureStoreFile();
 
                 return location;
