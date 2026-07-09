@@ -9,7 +9,9 @@
 | やりたいこと | 見る場所 |
 |---|---|
 | MainFormを作る | [MainForm 必須コントロール](#mainform-必須コントロール) |
+| メニューバーを作る | [MainForm MenuStrip](#mainform-menustrip) |
 | 検索やごみ箱など将来機能の入口を置く | [MainForm 追加予定コントロール](#mainform-追加予定コントロール) |
+| 操作ボタン表示やサムネイルを置く | [表示モードとサムネイル](#表示モードとサムネイル) |
 | 設定画面を作る | [SettingsForm コントロール](#settingsform-コントロール) |
 | スタートメニュー/自動起動を置く | [常駐・起動 / ショートカット](#常駐起動--ショートカット) |
 | Codexへ依頼する文面 | [Codexに依頼するときのテンプレート](#codexに依頼するときのテンプレート) |
@@ -50,6 +52,49 @@
 
 ---
 
+# MainForm MenuStrip
+
+MenuStripはDesignerで配置しやすいため、少佐が先に作って構いません。
+Codexは `Name` 契約に従って `Click` イベントを接続します。
+
+| Name | 種類 | 役割 |
+|---|---|---|
+| `mainMenuStrip` | `MenuStrip` | MainForm上部メニューバー |
+| `fileToolStripMenuItem` | `ToolStripMenuItem` | ファイルメニュー |
+| `exportToolStripMenuItem` | `ToolStripMenuItem` | 登録内容を書き出す |
+| `importToolStripMenuItem` | `ToolStripMenuItem` | 登録内容を読み込む |
+| `exitToolStripMenuItem` | `ToolStripMenuItem` | アプリを終了 |
+| `registerToolStripMenuItem` | `ToolStripMenuItem` | 登録メニュー |
+| `addGroupToolStripMenuItem` | `ToolStripMenuItem` | グループ追加 |
+| `addFileToolStripMenuItem` | `ToolStripMenuItem` | ファイル追加 |
+| `addFolderToolStripMenuItem` | `ToolStripMenuItem` | フォルダー追加 |
+| `addUrlToolStripMenuItem` | `ToolStripMenuItem` | URL追加 |
+| `addTemplateToolStripMenuItem` | `ToolStripMenuItem` | テンプレート追加 |
+| `editToolStripMenuItem` | `ToolStripMenuItem` | 編集メニュー |
+| `openSelectedToolStripMenuItem` | `ToolStripMenuItem` | 選択項目を開く |
+| `copySelectedToolStripMenuItem` | `ToolStripMenuItem` | 選択項目をコピー |
+| `editSelectedToolStripMenuItem` | `ToolStripMenuItem` | 選択項目を編集 |
+| `detailSelectedToolStripMenuItem` | `ToolStripMenuItem` | 選択項目の詳細 |
+| `deleteSelectedToolStripMenuItem` | `ToolStripMenuItem` | 選択項目を削除 |
+| `undoToolStripMenuItem` | `ToolStripMenuItem` | 直前操作を元に戻す |
+| `viewToolStripMenuItem` | `ToolStripMenuItem` | 表示メニュー |
+| `showBeginnerHintsToolStripMenuItem` | `ToolStripMenuItem` | 使い方のヒント表示切り替え |
+| `showIconMeaningToolStripMenuItem` | `ToolStripMenuItem` | アイコンの意味表示切り替え |
+| `actionButtonDisplayModeToolStripMenuItem` | `ToolStripMenuItem` | 操作ボタン表示モード |
+| `beginnerActionButtonsToolStripMenuItem` | `ToolStripMenuItem` | 初心者向け文字つきボタン |
+| `compactIconButtonsToolStripMenuItem` | `ToolStripMenuItem` | コンパクトなアイコンボタン |
+| `showThumbnailsToolStripMenuItem` | `ToolStripMenuItem` | サムネイル表示切り替え |
+| `toolsToolStripMenuItem` | `ToolStripMenuItem` | ツールメニュー |
+| `settingsToolStripMenuItem` | `ToolStripMenuItem` | 設定画面を開く |
+| `trashToolStripMenuItem` | `ToolStripMenuItem` | ごみ箱を開く |
+| `backupToolStripMenuItem` | `ToolStripMenuItem` | バックアップ関連 |
+| `repairShortcutsToolStripMenuItem` | `ToolStripMenuItem` | ショートカット修復 |
+| `helpToolStripMenuItem` | `ToolStripMenuItem` | ヘルプメニュー |
+| `usageGuideToolStripMenuItem` | `ToolStripMenuItem` | 使い方ガイド |
+| `aboutToolStripMenuItem` | `ToolStripMenuItem` | バージョン情報 |
+
+---
+
 # MainForm 必須コントロール
 
 MainFormをDesignerで作るとき、まず必要なものです。
@@ -80,6 +125,55 @@ MainFormをDesignerで作るとき、まず必要なものです。
 | `beginnerHintsGroupBox` | `GroupBox` | 使い方のヒント表示エリア |
 | `iconMeaningGroupBox` | `GroupBox` | アイコンの意味表示エリア |
 | `iconMeaningPanel` | `FlowLayoutPanel` または `Panel` | 猫アイコン説明を並べる場所 |
+
+---
+
+# 表示モードとサムネイル
+
+## 操作ボタン表示モード
+
+候補設定名は `ActionButtonDisplayMode` です。
+
+| 値 | 内容 | 用途 |
+|---|---|---|
+| `BeginnerText` | 文字つきボタン | 初期値。初心者向け |
+| `CompactIcon` | アイコンボタン中心 | 省スペース。ToolTip/ホバー説明を使う |
+| `TextAndIcon` | アイコン＋文字 | 将来候補 |
+
+| Name | 種類 | 役割 |
+|---|---|---|
+| `beginnerActionPanel` | `Panel` または `FlowLayoutPanel` | 初心者向け文字つきボタン領域 |
+| `compactActionToolStrip` | `ToolStrip` | コンパクトなアイコン操作領域 |
+| `compactActionPanel` | `Panel` または `FlowLayoutPanel` | ToolStripを使わない場合のコンパクト操作領域 |
+| `actionToolTip` | `ToolTip` | 操作説明のToolTip |
+| `actionHoverDescriptionLabel` | `Label` | ホバー中の操作説明 |
+
+## サムネイル表示
+
+候補設定名は `ItemVisualMode` です。
+
+| 値 | 内容 |
+|---|---|
+| `List` | 通常一覧 |
+| `ThumbnailList` | 一覧内に小さなサムネイルを表示 |
+| `LargeThumbnail` | 大きめのサムネイル中心表示 |
+
+| Name | 種類 | 役割 |
+|---|---|---|
+| `itemVisualModeComboBox` | `ComboBox` | 項目一覧の見せ方を切り替える |
+| `showThumbnailsToolStripMenuItem` | `ToolStripMenuItem` | メニューからサムネイル表示を切り替える |
+| `thumbnailSizeComboBox` | `ComboBox` | サムネイルサイズを選ぶ |
+| `thumbnailSizeTrackBar` | `TrackBar` | サムネイルサイズを細かく調整 |
+| `thumbnailPreviewPanel` | `Panel` | サムネイル設定のプレビュー |
+| `itemThumbnailColumn` | `DataGridViewImageColumn` | 画像/動画のサムネイル列 |
+
+注意。
+
+- まずは画像サムネイルを優先する。
+- 動画サムネイルは次段階。
+- 読み込み失敗時は通常アイコンへフォールバックする。
+- 動画サムネイルはWindows Shellサムネイルを優先する。
+- FFmpeg同梱はライセンスと配布負荷があるため慎重に判断する。
 
 ---
 
@@ -147,6 +241,10 @@ Designerで列を作る場合は、以下のNameを推奨します。
 | `typeDisplayModeComboBox` | `ComboBox` | 種類表示：アイコン＋文字/アイコンのみ/文字のみ/非表示 |
 | `settingsShowBeginnerHintsCheckBox` | `CheckBox` | 使い方のヒントを表示 |
 | `settingsShowIconMeaningCheckBox` | `CheckBox` | アイコンの意味を表示 |
+| `actionButtonDisplayModeComboBox` | `ComboBox` | 操作ボタン表示モードを切り替える |
+| `itemVisualModeComboBox` | `ComboBox` | 項目一覧の見せ方を切り替える |
+| `showThumbnailsCheckBox` | `CheckBox` | 画像/動画のサムネイル表示を使う |
+| `thumbnailSizeComboBox` | `ComboBox` | サムネイルの既定サイズを選ぶ |
 
 ## 常駐・起動 / ショートカット
 
@@ -215,11 +313,11 @@ Text / Size / Location / Margin / Padding / Dock / Anchor は必要なく上書�
 1. MainFormの必須コントロール  
    グループ一覧、項目一覧、追加/操作ボタン、ステータス。
 
-2. MainFormの説明エリア  
-   `beginnerHintsGroupBox`、`iconMeaningGroupBox`、`iconMeaningPanel`。
+2. MainFormのMenuStripと説明エリア  
+   `mainMenuStrip`、`beginnerHintsGroupBox`、`iconMeaningGroupBox`、`iconMeaningPanel`。
 
-3. MainFormの検索入口  
-   検索ボックス、検索ボタン、検索範囲、種類フィルター。
+3. MainFormの検索入口と表示モード入口  
+   検索ボックス、検索ボタン、検索範囲、種類フィルター、操作ボタン表示モード、サムネイル表示。
 
 4. SettingsFormの常駐・起動カテゴリ  
    Windows自動起動、起動時最小化、スタートメニュー登録。
