@@ -1,103 +1,176 @@
 # UI接続契約
 
-この文書は、ユーザーが Visual Studio Designer で画面を作り直すときに、Codex が機能コードを安全に接続するための契約です。
+この文書は、**少佐がVisual Studio DesignerでUIを作り、Codexが機能を接続するための約束**です。
 
-ユーザーは見た目、文言、余白、サイズ、配置をDesignerで調整します。
-Codexはここに定義された `Name` を使って、イベント、保存処理、サービス呼び出し、テストを接続します。
+目的は、少佐が見た目・文言・配置を自由に調整しつつ、Codexが迷わず処理をつなげられるようにすることです。
+
+## まず読むところ
+
+| やりたいこと | 見る場所 |
+|---|---|
+| MainFormを作る | [MainForm 必須コントロール](#mainform-必須コントロール) |
+| 検索やごみ箱など将来機能の入口を置く | [MainForm 追加予定コントロール](#mainform-追加予定コントロール) |
+| 設定画面を作る | [SettingsForm コントロール](#settingsform-コントロール) |
+| スタートメニュー/自動起動を置く | [常駐・起動 / ショートカット](#常駐起動--ショートカット) |
+| Codexへ依頼する文面 | [Codexに依頼するときのテンプレート](#codexに依頼するときのテンプレート) |
+
+---
 
 ## 基本ルール
 
-- `Text`、`Size`、`Margin`、`Padding`、`Dock`、`Anchor` はDesignerで調整してよい。
-- `Name` はCodexが接続に使うため、原則変更しない。
-- `Name` を変えたい場合は、この文書とコード接続を同時に更新する。
-- CodexはDesigner管理UIを勝手に作り直さない。
-- 未実装ボタンは配置してよい。実装前は `Enabled = false`、またはクリック時に「今後実装予定」と表示する。
-- 機能追加時は、既存のDesigner配置を維持し、必要なイベント接続だけ追加する。
+### 少佐が自由に触ってよいもの
 
-## MainForm コントロール契約
+- `Text`
+- `Size`
+- `Location`
+- `Margin`
+- `Padding`
+- `Dock`
+- `Anchor`
+- 表示順
+- GroupBox / Panel / Button / Label の配置
+- 固定説明文
 
-今後MainFormをDesigner-firstで作り直す場合は、以下の `Name` を使ってください。
-現行コードには `_groupListBox` のようなprivateフィールド名が残っていますが、今後の安定名はこの表を優先します。
+### 触るときに注意するもの
 
-| Name | 種類の目安 | 用途 | 必須 | 未実装でも置いてよいか | Name変更 | Codexが接続するイベント |
-|---|---|---|---|---|---|---|
-| `groupListBox` | `ListBox` | グループ一覧を表示し、選択中グループを決める | 必須 | いいえ | 不可 | `SelectedIndexChanged` |
-| `itemGridView` | `DataGridView` | 選択グループ内の項目一覧を表示する | 必須 | いいえ | 不可 | `CellDoubleClick`, `MouseDown`, `DragEnter`, `DragDrop`, `SelectionChanged` |
-| `addGroupButton` | `Button` | グループを追加する | 必須 | いいえ | 不可 | `Click` |
-| `addFileButton` | `Button` | ファイル参照を追加する | 必須 | いいえ | 不可 | `Click` |
-| `addFolderButton` | `Button` | フォルダー参照を追加する | 必須 | いいえ | 不可 | `Click` |
-| `addUrlButton` | `Button` | URL項目を追加する | 必須 | いいえ | 不可 | `Click` |
-| `addTemplateButton` | `Button` | テンプレート文を追加する | 必須 | いいえ | 不可 | `Click` |
-| `openButton` | `Button` | 選択項目を開く。テンプレートは本文をコピーする | 必須 | いいえ | 不可 | `Click` |
-| `copyButton` | `Button` | 選択項目のパス、URL、本文をコピーする | 必須 | いいえ | 不可 | `Click` |
-| `editButton` | `Button` | 選択項目を編集する | 必須 | いいえ | 不可 | `Click` |
-| `detailButton` | `Button` | 選択項目の詳細を表示する | 任意 | はい | 不可 | `Click` |
-| `deleteButton` | `Button` | 選択項目を削除、またはアプリ内ごみ箱へ移動する | 必須 | いいえ | 不可 | `Click` |
-| `statusLabel` | `Label` | 保存、読み込み、操作結果を表示する | 必須 | いいえ | 不可 | 直接イベントなし。CodexがTextを更新 |
-| `settingsButton` | `Button` | 設定画面を開く | 任意 | はい | 不可 | `Click` |
-| `searchTextBox` | `TextBox` | 検索キーワードを入力する | 任意 | はい | 不可 | `TextChanged`, `KeyDown` |
-| `searchButton` | `Button` | 検索を実行する | 任意 | はい | 不可 | `Click` |
-| `searchScopeComboBox` | `ComboBox` | 検索範囲を「現在のグループ / 全体」から選ぶ | 任意 | はい | 不可 | `SelectedIndexChanged` |
-| `typeFilterComboBox` | `ComboBox` | 種類で絞り込む | 任意 | はい | 不可 | `SelectedIndexChanged` |
-| `clearSearchButton` | `Button` | 検索条件をクリアする | 任意 | はい | 不可 | `Click` |
-| `trashButton` | `Button` | アプリ内ごみ箱を開く | 任意 | はい | 不可 | `Click` |
-| `importButton` | `Button` | 登録内容を読み込む | 任意 | はい | 不可 | `Click` |
-| `exportButton` | `Button` | 登録内容を書き出す | 任意 | はい | 不可 | `Click` |
-| `showBeginnerHintsCheckBox` | `CheckBox` | 使い方のヒントの表示/非表示を切り替える | 必須 | いいえ | 不可 | `CheckedChanged` |
-| `showIconMeaningCheckBox` | `CheckBox` | アイコンの意味の表示/非表示を切り替える | 必須 | いいえ | 不可 | `CheckedChanged` |
-| `beginnerHintsGroupBox` | `GroupBox` | 使い方のヒントを表示する領域 | 必須 | いいえ | 不可 | 直接イベントなし。Visibleを更新 |
-| `iconMeaningGroupBox` | `GroupBox` | アイコンの意味を表示する領域 | 必須 | いいえ | 不可 | 直接イベントなし。Visibleを更新 |
-| `iconMeaningPanel` | `FlowLayoutPanel` または `Panel` | 種類別の猫アイコン説明を配置する領域 | 必須 | いいえ | 不可 | 直接イベントなし。Codexがアイコン説明を追加 |
+| 項目 | 理由 |
+|---|---|
+| `Name` | Codexが機能接続に使うため |
+| イベントハンドラ | Codexが処理をつなぐ場所のため |
+| DataGridView列の内部設定 | 表示処理と関係するため |
+| Services / Models | 保存や実処理の本体のため |
 
-## DataGridView 列の推奨Name
+### Codexが守ること
 
-`itemGridView` の列はDesignerで作っても、Codex側で作っても構いません。
-Designerで作る場合は、以下のNameを推奨します。
+- Designerで作ったUIを勝手に作り直さない。
+- `Text / Size / Location / Margin / Padding / Dock / Anchor` を必要なく上書きしない。
+- 機能追加は、できるだけ Presenter / Service 側で行う。
+- UI変更が必要な場合は、理由を報告する。
+- 未実装ボタンは、実装前は `Enabled = false` または「今後実装予定」表示にする。
 
-| Name | 用途 |
+---
+
+# MainForm 必須コントロール
+
+MainFormをDesignerで作るとき、まず必要なものです。
+
+| Name | 種類 | 役割 |
+|---|---|---|
+| `groupListBox` | `ListBox` | グループ一覧 |
+| `itemGridView` | `DataGridView` | 項目一覧 |
+| `addGroupButton` | `Button` | グループ追加 |
+| `addFileButton` | `Button` | ファイル追加 |
+| `addFolderButton` | `Button` | フォルダー追加 |
+| `addUrlButton` | `Button` | URL追加 |
+| `addTemplateButton` | `Button` | テンプレート追加 |
+| `openButton` | `Button` | 選択項目を開く |
+| `copyButton` | `Button` | パス、URL、本文をコピー |
+| `editButton` | `Button` | 選択項目を編集 |
+| `deleteButton` | `Button` | 選択項目を削除 |
+| `statusLabel` | `Label` | 操作結果や保存状態を表示 |
+
+## あるとよい基本コントロール
+
+| Name | 種類 | 役割 |
+|---|---|---|
+| `detailButton` | `Button` | 詳細表示 |
+| `settingsButton` | `Button` | 設定画面を開く |
+| `showBeginnerHintsCheckBox` | `CheckBox` | 使い方のヒントを表示/非表示 |
+| `showIconMeaningCheckBox` | `CheckBox` | アイコンの意味を表示/非表示 |
+| `beginnerHintsGroupBox` | `GroupBox` | 使い方のヒント表示エリア |
+| `iconMeaningGroupBox` | `GroupBox` | アイコンの意味表示エリア |
+| `iconMeaningPanel` | `FlowLayoutPanel` または `Panel` | 猫アイコン説明を並べる場所 |
+
+---
+
+# MainForm 追加予定コントロール
+
+まだ未実装でも、先にDesignerで置いてよい入口です。
+
+| Name | 種類 | 役割 | 実装前の扱い |
+|---|---|---|---|
+| `searchTextBox` | `TextBox` | 検索キーワード | 置いてOK |
+| `searchButton` | `Button` | 検索実行 | 未接続ならDisabled |
+| `searchScopeComboBox` | `ComboBox` | 現在のグループ/全体 | 未接続ならDisabled |
+| `typeFilterComboBox` | `ComboBox` | 種類フィルター | 未接続ならDisabled |
+| `clearSearchButton` | `Button` | 検索条件クリア | 未接続ならDisabled |
+| `trashButton` | `Button` | ごみ箱を開く | 未接続ならDisabled |
+| `importButton` | `Button` | 登録内容を読み込む | 未接続ならDisabled |
+| `exportButton` | `Button` | 登録内容を書き出す | 未接続ならDisabled |
+| `undoButton` | `Button` | 直前操作を元に戻す | 未接続ならDisabled |
+| `moveUpButton` | `Button` | 項目を上へ移動 | 未接続ならDisabled |
+| `moveDownButton` | `Button` | 項目を下へ移動 | 未接続ならDisabled |
+
+---
+
+# DataGridView 推奨列
+
+`itemGridView` の列は、Codex側で作っても、少佐がDesignerで作っても構いません。
+
+Designerで列を作る場合は、以下のNameを推奨します。
+
+| Name | 役割 |
 |---|---|
 | `itemIconColumn` | 種類アイコン |
 | `itemTypeColumn` | 種類文字 |
 | `itemTitleColumn` | タイトル |
-| `itemReferenceColumn` | 参照先、URL、テンプレートプレビュー |
-| `itemStatusColumn` | 未確認などの状態 |
+| `itemReferenceColumn` | パス、URL、テンプレート概要 |
+| `itemStatusColumn` | 存在しないファイルなどの状態 |
 
-## ContextMenuStrip 契約
+---
 
-MainFormの項目右クリックメニューをDesignerで置く場合は、以下のNameを推奨します。
+# 右クリックメニュー
 
-| Name | 種類 | 用途 | 実装状況 | Codexが接続するイベント |
-|---|---|---|---|---|
-| `itemContextMenuStrip` | `ContextMenuStrip` | 項目右クリックメニュー | 基本メニューは実装済み | `Opening` |
-| `openToolStripMenuItem` | `ToolStripMenuItem` | 開く | 実装済み | `Click` |
-| `copyToolStripMenuItem` | `ToolStripMenuItem` | コピー | 実装済み | `Click` |
-| `editToolStripMenuItem` | `ToolStripMenuItem` | 編集 | 実装済み | `Click` |
-| `detailToolStripMenuItem` | `ToolStripMenuItem` | 詳細 | 簡易実装 | `Click` |
-| `deleteToolStripMenuItem` | `ToolStripMenuItem` | 削除 | 土台あり | `Click` |
-| `openContainingFolderToolStripMenuItem` | `ToolStripMenuItem` | 参照先のフォルダーを開く | 未実装 | `Click` |
-| `copyTitleToolStripMenuItem` | `ToolStripMenuItem` | タイトルをコピー | 未実装 | `Click` |
+右クリックメニューをDesignerで置く場合の推奨Nameです。
 
-## SettingsForm 候補コントロール
+| Name | 種類 | 役割 |
+|---|---|---|
+| `itemContextMenuStrip` | `ContextMenuStrip` | 項目右クリックメニュー |
+| `openToolStripMenuItem` | `ToolStripMenuItem` | 開く |
+| `copyToolStripMenuItem` | `ToolStripMenuItem` | コピー |
+| `editToolStripMenuItem` | `ToolStripMenuItem` | 編集 |
+| `detailToolStripMenuItem` | `ToolStripMenuItem` | 詳細 |
+| `deleteToolStripMenuItem` | `ToolStripMenuItem` | 削除 |
+| `openContainingFolderToolStripMenuItem` | `ToolStripMenuItem` | 置いてあるフォルダーを開く |
+| `copyTitleToolStripMenuItem` | `ToolStripMenuItem` | タイトルをコピー |
+
+---
+
+# SettingsForm コントロール
 
 設定画面は未実装ですが、準MVPで優先して作る対象です。
-Designerで先に配置する場合は、以下のNameを使ってください。
 
-### 常駐・起動
+## 表示
 
-| Name | 種類の目安 | 用途 | 必須 | 未実装でも置いてよいか | Name変更 | Codexが接続するイベント |
-|---|---|---|---|---|---|---|
-| `autoStartWithWindowsCheckBox` | `CheckBox` | Windows起動時にContextBinderを自動起動するか | SettingsFormでは必須候補 | はい | 不可 | `CheckedChanged` または `Apply`時 |
-| `startMinimizedCheckBox` | `CheckBox` | 自動起動時にMainFormを出さずタスクトレイ格納で起動するか | SettingsFormでは必須候補 | はい | 不可 | `CheckedChanged` または `Apply`時 |
+| Name | 種類 | 役割 |
+|---|---|---|
+| `typeDisplayModeComboBox` | `ComboBox` | 種類表示：アイコン＋文字/アイコンのみ/文字のみ/非表示 |
+| `settingsShowBeginnerHintsCheckBox` | `CheckBox` | 使い方のヒントを表示 |
+| `settingsShowIconMeaningCheckBox` | `CheckBox` | アイコンの意味を表示 |
 
-### スタートメニュー
+## 常駐・起動 / ショートカット
 
-| Name | 種類の目安 | 用途 | 必須 | 未実装でも置いてよいか | Name変更 | Codexが接続するイベント |
-|---|---|---|---|---|---|---|
-| `registerStartMenuButton` | `Button` | スタートメニューにContextBinderのショートカットを作成する | SettingsFormでは必須候補 | はい | 不可 | `Click` |
-| `unregisterStartMenuButton` | `Button` | スタートメニューからContextBinderのショートカットを削除する | SettingsFormでは必須候補 | はい | 不可 | `Click` |
-| `repairShortcutsButton` | `Button` | アプリ本体の場所が変わった場合にショートカットのリンク先を修復する | SettingsFormでは必須候補 | はい | 不可 | `Click` |
+| Name | 種類 | 役割 |
+|---|---|---|
+| `minimizeToTrayOnCloseCheckBox` | `CheckBox` | 閉じるボタンでタスクトレイに格納 |
+| `autoStartWithWindowsCheckBox` | `CheckBox` | Windows起動時に自動起動 |
+| `startMinimizedCheckBox` | `CheckBox` | 自動起動時に最小化/タスクトレイで起動 |
+| `registerStartMenuButton` | `Button` | スタートメニューに登録 |
+| `unregisterStartMenuButton` | `Button` | スタートメニューから削除 |
+| `repairShortcutsButton` | `Button` | ショートカットのリンク先を修復 |
 
-## ショートカット機能の実装契約
+## バックアップ・削除
+
+| Name | 種類 | 役割 |
+|---|---|---|
+| `autoBackupEnabledCheckBox` | `CheckBox` | 自動バックアップを使う |
+| `maxBackupCountNumericUpDown` | `NumericUpDown` | バックアップ保持数 |
+| `confirmBeforeDeleteCheckBox` | `CheckBox` | 削除前に確認 |
+| `moveDeletedItemsToTrashCheckBox` | `CheckBox` | 削除時にアプリ内ごみ箱へ移動 |
+
+---
+
+# ショートカット機能の実装方針
 
 スタートメニュー登録とWindows起動時自動起動は、UIから直接ファイル操作せず、Serviceへ分離します。
 
@@ -119,23 +192,37 @@ Designerで先に配置する場合は、以下のNameを使ってください�
 注意:
 
 - 管理者権限を要求しない。
-- 第一候補はユーザー単位ショートカットとする。
+- 第一候補はユーザー単位ショートカット。
 - レジストリRunキーやタスクスケジューラは第一候補にしない。
 - ZIP配布ではアプリフォルダが移動される可能性があるため、修復導線を用意する。
 - 解除ボタンを用意し、アンインストーラーなしでもユーザーが片付けられるようにする。
 
-## Codexに機能接続を依頼するときのテンプレート
+---
+
+# Codexに依頼するときのテンプレート
 
 ```text
 Designerで配置済みのUIを作り直さず、docs/UI_CONTROL_CONTRACT.md のNameに接続してください。
-Text / Size / Margin / Padding / Dock / Anchor は必要なく上書きしないでください。
+Text / Size / Location / Margin / Padding / Dock / Anchor は必要なく上書きしないでください。
 未実装ボタンは、実装するまでDisabledまたは「今後実装予定」表示にしてください。
 保存処理やファイル操作はServicesへ分離してください。
 ```
 
-## ユーザーが先にDesignerで用意するとよいもの
+---
 
-1. MainFormの右側ボタン群と、下部の `beginnerHintsGroupBox` / `iconMeaningGroupBox`。
-2. MainForm上部または中央上の検索UI一式。
-3. SettingsFormの「常駐・起動」「スタートメニュー」「Windows起動時」カテゴリ。
-4. ごみ箱、インポート/エクスポート、バックアップ復元は、ボタンだけ先に置いてDisabledにしておく。
+# 少佐が先にDesignerで用意するとよい順番
+
+1. MainFormの必須コントロール  
+   グループ一覧、項目一覧、追加/操作ボタン、ステータス。
+
+2. MainFormの説明エリア  
+   `beginnerHintsGroupBox`、`iconMeaningGroupBox`、`iconMeaningPanel`。
+
+3. MainFormの検索入口  
+   検索ボックス、検索ボタン、検索範囲、種類フィルター。
+
+4. SettingsFormの常駐・起動カテゴリ  
+   Windows自動起動、起動時最小化、スタートメニュー登録。
+
+5. 将来機能の入口  
+   ごみ箱、インポート、エクスポート、バックアップ復元。最初はDisabledでOK。
