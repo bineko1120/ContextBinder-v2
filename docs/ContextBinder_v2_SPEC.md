@@ -397,6 +397,69 @@ ContextBinderへようこそ
 
 検索が全体検索モードの場合、グループ列を一時表示してもよい。
 
+### 8.3.1 項目の並び替えと表示用ソート
+
+ContextBinder v2 では、項目ごとに手動並び順を保持する。
+
+- 手動並び順は、ユーザーがD&Dや上下ボタンで決める固定の並びである。
+- 名前順、種類順、追加順、更新順は表示用ソートである。
+- 表示用ソートへ切り替えても、手動並び順は失われない。
+- 手動並び順へ戻すと、ユーザーが保存した並びに戻る。
+
+表示用ソートの候補。
+
+- 手動並び順
+- 名前順
+- 種類/ジャンル順
+- 追加順
+- 更新順
+- 必要なら参照先順
+
+#### 自動ソート中に手動変更した場合
+
+名前順や種類順で表示している状態で、ユーザーがD&Dや上下ボタンで並びを変更した場合は、確認ダイアログを表示する。
+
+文言例。
+
+```text
+現在は名前順で表示しています。
+このまま並び替えると、現在の表示順をもとに手動並び順として保存します。
+続行しますか？
+```
+
+続行した場合。
+
+- 現在の表示順をもとに手動並び順を更新する。
+- SortModeを手動並び順へ切り替える。
+
+キャンセルした場合。
+
+- 並び替えしない。
+
+#### 現在の表示順を手動並び順として保存
+
+ユーザーが名前順や種類順で表示した後、その順番を固定したい場合に使う。
+
+例。
+
+```text
+名前順で表示
+→ 現在の順番を手動並び順として保存
+→ その順番が手動並び順として保存される
+```
+
+#### 選択範囲だけ並び替え
+
+複数選択した範囲だけ、指定した順番で並び替えられるようにする。
+
+例。
+
+- 10件あるうち、3件だけ選択
+- 選択範囲を名前順に並び替え
+- 選択されていない項目の位置はできるだけ維持
+- 選択範囲内の順番だけ変更
+- 結果は手動並び順として保存する
+
 ### 8.4 右側ボタン
 
 主要操作は右側ボタンに配置する。
@@ -665,6 +728,8 @@ public sealed class AppSettings
 
     public SearchScope DefaultSearchScope { get; set; } = SearchScope.CurrentGroup;
     public bool SearchTemplateBody { get; set; } = true;
+
+    public ItemSortMode DefaultItemSortMode { get; set; } = ItemSortMode.Manual;
 }
 ```
 
@@ -678,7 +743,35 @@ public enum SearchScope
 }
 ```
 
-### 12.6 DeletedItemRecord
+### 12.6 ItemSortMode
+
+```csharp
+public enum ItemSortMode
+{
+    Manual,
+    Name,
+    Type,
+    CreatedAt,
+    UpdatedAt
+}
+```
+
+### 12.7 BinderItem.SortOrder
+
+既に `SortOrder` または類似の手動並び順フィールドがある場合はそれを使う。
+なければ `BinderItem` に以下を追加する。
+
+```csharp
+public int SortOrder { get; set; }
+```
+
+意味。
+
+- Manual並び順で使う。
+- 自動ソート時には破壊しない。
+- ユーザーがD&D、上下移動、現在順を保存した時に更新する。
+
+### 12.8 DeletedItemRecord
 
 ```csharp
 public sealed class DeletedItemRecord
@@ -1450,6 +1543,47 @@ ContextBinder/
 | ClipboardService | クリップボード操作 |
 | SearchService | 検索/絞り込み |
 | TrashService | ごみ箱/削除履歴 |
+| ItemOrderingService | 手動並び順の正規化、上へ移動、下へ移動、D&D並び替え、現在順の保存 |
+| ItemSortService | SortModeに応じた表示順作成、選択範囲内ソート |
+
+### 32.2 項目並び替えService方針
+
+並び替え処理はMainFormに直書きしない。
+
+候補Service。
+
+- `ItemOrderingService`
+- `ItemSortService`
+
+責務。
+
+- 手動並び順の正規化
+- 上へ移動
+- 下へ移動
+- D&D並び替え
+- 現在の表示順を手動並び順として保存
+- SortModeに応じた表示順作成
+- 選択範囲内ソート
+
+MainForm / Presenter側の責務。
+
+- UIから選択状態とSortModeを受け取る
+- Serviceへ処理を委譲する
+- 結果をDataGridViewへ反映する
+- 必要なら保存する
+
+### 32.3 項目並び替えテスト候補
+
+- Manual順で表示される
+- Name順へ切り替えてもSortOrderは壊れない
+- Type順へ切り替えてもSortOrderは壊れない
+- 手動並び順へ戻すと元の順番に戻る
+- 上へ移動でSortOrderが更新される
+- 下へ移動でSortOrderが更新される
+- D&D後にSortOrderが更新される
+- 現在の表示順を手動並び順として保存できる
+- 選択範囲だけ名前順にできる
+- 選択外の項目位置が不必要に崩れない
 
 ---
 
