@@ -57,11 +57,11 @@
 | 機能名 | 現状 | 関連ファイル | UIの有無 | 処理の有無 | テストの有無 | 次に必要な作業 | 優先度 |
 |---|---|---|---|---|---|---|---|
 | 詳細 | UIのみ存在 | `Forms/MainForm.cs` | あり | MessageBoxで簡易表示 | なし | `ItemDetailForm` をDesigner-firstで追加 | 中 |
-| 削除 | 土台のみ存在 | `Forms/MainForm.cs`, `Services/TrashService.cs`, `Models/DeletedItemRecord.cs` | あり | 削除確認、アプリ内ごみ箱記録あり | なし | ごみ箱画面、復元、完全削除 | 高 |
+| 削除 | 土台のみ存在 | `Forms/MainForm.cs`, `Services/TrashService.cs`, `Models/DeletedItemRecord.cs` | あり | 削除確認、登録のごみ箱記録あり | なし | 登録のごみ箱画面、復元、保持期限、登録情報削除 | 高 |
 | 検索 | 土台のみ存在 | `Services/SearchService.cs`, `Models/SearchScope.cs`, `Models/AppSettings.cs` | なし | Serviceはキーワード検索可能 | なし | MainFormの検索UI接続 | 中 |
 | D&D追加 | 土台のみ存在 | `Forms/MainForm.cs`, `Services/DragDropService.cs`, `Services/FileTypeDetector.cs` | あり | ファイル/テキストの追加は可能 | なし | 設定値反映、タイトル確認、重複時ジャンプ | 高 |
 | ファイル存在チェック | 土台のみ存在 | `Forms/MainForm.cs` | 状態列あり | 表示時に存在確認 | なし | 再チェック、警告表示、まとめて確認 | 中 |
-| ごみ箱 | 土台のみ存在 | `Services/TrashService.cs`, `Models/DeletedItemRecord.cs`, `Models/ContextBinderStore.cs` | なし | 削除時記録のみ | なし | `RecycleBinForm`、復元、完全削除 | 高 |
+| 登録のごみ箱 | 土台のみ存在 | `Services/TrashService.cs`, `Models/DeletedItemRecord.cs`, `Models/ContextBinderStore.cs` | なし | 削除時記録のみ。元ファイルは削除しない方針 | なし | `RecycleBinForm`、復元、保持日数、自動削除、手動のみ設定 | 高 |
 | バックアップ | 土台のみ存在 | `Services/BackupService.cs`, `Services/StoreService.cs`, `Models/AppSettings.cs` | なし | 保存時バックアップ、保持数削除 | あり（一部） | 起動時バックアップ、設定画面、フォルダを開く | 中 |
 
 ---
@@ -90,9 +90,11 @@
 | 上部メニューバー | 未実装 | ファイル / 登録 / 編集 / 表示 / ツール / ヘルプ | 中〜高 |
 | 画像サムネイル表示 | 未実装 | 画像のサムネイルを一覧表示 | 中 |
 | 動画サムネイル表示 | 未実装 | 動画のサムネイルを一覧表示。配布・速度に注意 | 中〜低 |
-| 項目並び替え | 土台あり | D&D、上下ボタン、手動順保存 | 高 |
-| 表示用ソート | 未実装 | 手動 / 名前 / 種類 / 追加 / 更新順 | 中〜高 |
-| 選択範囲ソート | 未実装 | 選択した項目だけ指定順で並べ、手動順として保存 | 中 |
+| 項目並び替え | 土台あり | 右ドラッグD&D、上下ボタン、未保存ドラフト、並び順保存、保存前に戻す | 高 |
+| 表示用ソート | 未実装 | 手動 / 名前 / 種類 / 追加 / 更新順。保存済み手動順を破壊しない | 中〜高 |
+| 選択範囲ソート | 未実装 | 選択した項目だけ指定順で並べ、まず未保存ドラフトへ反映する | 中 |
+| 未保存並び順確認 | 未実装 | 終了/再読み込み/置き換え時に確認。次回から同じ選択を自動適用可能 | 中〜高 |
+| 登録のごみ箱保持期限 | 未実装 | 既定30日自動削除、または手動のみ。起動時と起動中1日1回チェック | 高 |
 
 ---
 
@@ -116,5 +118,5 @@
 3. `SettingsForm` をDesigner-firstで追加し、既存設定と保存を接続する。
 4. `ShortcutService` を追加し、スタートメニュー登録とWindows自動起動を実装する。
 5. 検索・絞り込み・並び替えをMainFormへ接続する。
-6. ごみ箱画面を追加し、復元と完全削除を実装する。
+6. 登録のごみ箱画面を追加し、復元、保持期限、登録情報削除を実装する。
 7. バックアップ復元、インポート/エクスポート、BOOTH向けpublishを整える。

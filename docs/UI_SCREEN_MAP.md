@@ -24,7 +24,7 @@
 4. **ItemDetailForm / CopyMoveDialog**  
    詳細確認とグループ間コピー・移動。
 5. **RecycleBinForm**  
-   ごみ箱、復元、完全削除。
+   登録のごみ箱、復元、登録情報削除。
 6. **ImportExportDialog / BackupRestoreDialog**  
    登録内容の移行と復元。
 7. **FirstRunSetupForm**  
@@ -45,7 +45,7 @@
 | `TemplateEditForm` | テンプレート本文を編集 | 専用画面は未完成 | 高 |
 | `ItemDetailForm` | 登録内容の詳細確認 | 簡易表示のみ | 中 |
 | `CopyMoveDialog` | 他グループへコピー・移動 | 未実装 | 中 |
-| `RecycleBinForm` | 削除項目の復元・完全削除 | 未実装 | 高 |
+| `RecycleBinForm` | 登録のごみ箱、復元、登録情報削除 | 未実装 | 高 |
 | `ImportExportDialog` | 登録内容の読み込み・書き出し | 未実装 | 中 |
 | `BackupRestoreDialog` | バックアップから復元 | 未実装 | 中 |
 | `AboutForm` | バージョン・権利情報 | 未実装 | 低 |
@@ -195,25 +195,53 @@ ContextBinderの中心画面です。
 
 ## 並び替え・ソート
 
-| Name | 用途 |
-|---|---|
-| `sortModeComboBox` | 手動 / 名前 / 種類 / 追加順 / 更新順 |
-| `moveUpButton` | 選択項目を上へ移動 |
-| `moveDownButton` | 選択項目を下へ移動 |
-| `applySortToManualOrderButton` | 現在の表示順を手動順として保存 |
-| `sortSelectedButton` | 選択範囲だけを並び替え |
-| `sortSelectedModeComboBox` | 選択範囲の並び方 |
+置くもの：
 
-### 並び順のルール
+- `sortModeComboBox`
+- `moveUpButton`
+- `moveDownButton`
+- `saveManualOrderButton`
+- `revertUnsavedOrderButton`
+- `orderUnsavedStatusLabel`
+- `sortSelectedButton` 任意
+- `sortSelectedModeComboBox` 任意
 
-- 手動並び順は別に保存する
-- 名前順などへ切り替えても、手動並び順は消えない
-- 手動並び順へ戻すと、以前の手動順へ戻る
-- 自動ソート中にD&Dや上下移動をするときは確認する
-- 続行した場合、現在の表示順を新しい手動順として保存する
-- 選択範囲だけのソート結果も手動順として保存する
+初心者向けボタン表示では、文字つきボタンを常時表示する。
+コンパクト表示では、同じ機能を文字なしアイコンボタンとして表示し、ToolTipまたはホバー説明で意味を出す。
 
-並び替え機能は未実装です。
+表示例：
+
+```text
+並び方：[手動並び順 ▼]
+
+[↑ 上へ]
+[↓ 下へ]
+[並び順を保存]
+[保存前に戻す]
+
+● 並び順に未保存の変更があります
+```
+
+`orderUnsavedStatusLabel` は、未保存の並び替えがある時だけ表示する。
+
+動作：
+
+- 既定では右ドラッグで手動並び替えする
+- 上へ/下へボタンでも手動並び替えできる
+- D&Dや上下移動だけでは正式保存しない
+- `並び順を保存` を押した時だけ正式な手動並び順として保存する
+- `保存前に戻す` で最後に保存した手動並び順へ戻す
+- 名前順、種類順、追加順、更新順へ切り替えても保存済み手動順は壊さない
+- 表示用ソート中に手動変更した場合は、現在の表示順を編集中の手動順へコピーして未保存状態にする
+
+まだ未実装で置いてよいもの：
+
+- `sortSelectedButton`
+- `sortSelectedModeComboBox`
+- `restorePreviousManualOrderButton`
+- `undoOrderMoveButton`
+
+---
 
 ## 一覧・サムネイル表示
 
@@ -271,26 +299,71 @@ ContextBinderの中心画面です。
 
 ### D&D
 
-- 追加時にタイトルを確認
-- Ctrl/Shiftによるコピー・移動
-- グループへドロップ時に確認
-- D&D並び替え
-- URLやテンプレートを外部へドラッグ
+置くもの：
+
+- `confirmTitleOnDropAddCheckBox`
+- `enableGroupDropModifierShortcutsCheckBox`
+- `confirmGroupDropCopyMoveCheckBox`
+- `enableItemDragReorderCheckBox`
+- `manualReorderInputModeComboBox`
+- `enableExternalUrlTextDragOutCheckBox`
+- `enableExternalTemplateTextDragOutCheckBox`
+
+`manualReorderInputModeComboBox` の候補：
+
+- 右ドラッグだけで並び替える（おすすめ）
+- 左ドラッグまたは右ドラッグで並び替える
+
+---
 
 ### 検索・並び順
 
-- 既定の検索範囲
-- テンプレート本文も検索
-- 既定の並び順
+置くもの：
+
+- `defaultSearchScopeComboBox`
+- `searchTemplateBodyCheckBox`
+- `defaultItemSortModeComboBox`
+- `unsavedOrderBehaviorComboBox`
+
+`unsavedOrderBehaviorComboBox` の候補：
+
+- 毎回確認する
+- 自動的に保存する
+- 自動的に破棄する
+
+「次回からこの選択を自動的に適用する」で保存された設定は、この画面から戻せるようにする。
+
+---
 
 ### バックアップ・削除
 
-- 自動バックアップ
-- 保持数
-- バックアップフォルダを開く
-- 削除前確認
-- ごみ箱へ移動
-- ごみ箱を開く
+置くもの：
+
+- `enableAutoBackupCheckBox`
+- `backupRetentionNumericUpDown`
+- `openBackupFolderButton`
+- `exportButton`
+- `confirmDeleteCheckBox`
+- `moveDeletedItemsToTrashCheckBox`
+- `trashRetentionAutoRadioButton`
+- `trashRetentionManualOnlyRadioButton`
+- `trashRetentionDaysNumericUpDown`
+- `trashRetentionExplanationLabel`
+- `emptyTrashButton`
+
+表示する説明：
+
+```text
+削除されるのはContextBinderへの登録情報だけです。
+元のファイル、フォルダー、画像、動画は削除されません。
+```
+
+既定値：
+
+- 登録のごみ箱は30日後に自動削除
+- 手動削除のみも選べる
+
+---
 
 ### 常駐・起動
 
@@ -479,28 +552,56 @@ ContextBinderの中心画面です。
 
 ---
 
-# 10. RecycleBinForm
+# 10. RecycleBinForm / 登録のごみ箱
 
-## 目的
+目的：
 
-アプリ内ごみ箱から、項目を復元または完全削除します。
+削除したContextBinderの登録情報を確認、復元、または削除する。
 
-削除記録の土台はありますが、画面は未実装です。
+重要：
 
-## 必要項目
+```text
+ここで削除されるのは、ContextBinderへの登録情報だけです。
+元のファイル、フォルダー、画像、動画は削除されません。
+```
 
-- 削除項目一覧
-- 元のグループ
-- 削除日時
+状態：
+
+- 未実装
+
+少佐が配置するもの：
+
+- `trashMeaningNoticeLabel`
+- `trashGridView`
+- `restoreRegistrationButton`
+- `removeRegistrationFromTrashButton`
+- `emptyRegistrationTrashButton`
+- `closeButton`
+
+`trashGridView` に欲しい列：
+
 - 種類
 - タイトル
+- 元のグループ
+- 参照先または内容
+- ごみ箱へ入れた日時
+- 自動削除予定日
 
-## ボタン
+手動削除のみ設定の場合、自動削除予定日は「手動で削除するまで保持」と表示する。
 
-- 復元
-- 選択項目を完全削除
-- ごみ箱を空にする
-- 閉じる
+Codexが接続する機能：
+
+- 元グループへ復元
+- 元グループがなければ未分類へ復元
+- 選択した登録情報をごみ箱から削除
+- ごみ箱内の登録情報をすべて削除
+- 起動時の期限切れ削除
+- 起動中1日1回の期限切れ削除
+
+注意：
+
+- 元ファイルを削除する機能は持たない
+- ごみ箱へ再度入れた場合は、その時点で削除日時を更新する
 
 ---
 

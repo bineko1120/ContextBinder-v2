@@ -399,66 +399,94 @@ ContextBinderへようこそ
 
 ### 8.3.1 項目の並び替えと表示用ソート
 
-ContextBinder v2 では、項目ごとに手動並び順を保持する。
+項目一覧の並び順は、以下の3層に分けて扱う。
 
-- 手動並び順は、ユーザーがD&Dや上下ボタンで決める固定の並びである。
-- 名前順、種類順、追加順、更新順は表示用ソートである。
-- 表示用ソートへ切り替えても、手動並び順は失われない。
-- 手動並び順へ戻すと、ユーザーが保存した並びに戻る。
+| 種類 | 内容 |
+|---|---|
+| 保存済み手動並び順 | ユーザーが明示的に「並び順を保存」した正式な並び |
+| 編集中の手動並び順 | 右ドラッグ、上下移動、選択範囲ソートで変更中の未保存の並び |
+| 表示用ソート | 名前順、種類順、追加順、更新順など、一時的な見え方 |
 
-表示用ソートの候補。
+名前順、種類順、追加順、更新順へ切り替えても、保存済み手動並び順は破壊しない。
+手動並び順へ戻した場合は、最後に保存した手動並び順へ戻る。
 
-- 手動並び順
-- 名前順
-- 種類/ジャンル順
-- 追加順
-- 更新順
-- 必要なら参照先順
+#### 並び替えUI
 
-#### 自動ソート中に手動変更した場合
-
-名前順や種類順で表示している状態で、ユーザーがD&Dや上下ボタンで並びを変更した場合は、確認ダイアログを表示する。
-
-文言例。
+MainFormには、次の操作を置く。
 
 ```text
-現在は名前順で表示しています。
-このまま並び替えると、現在の表示順をもとに手動並び順として保存します。
-続行しますか？
+並び方：[手動並び順 ▼]
+
+[↑ 上へ]
+[↓ 下へ]
+[並び順を保存]
+[保存前に戻す]
+
+● 並び順に未保存の変更があります
 ```
 
-続行した場合。
+`● 並び順に未保存の変更があります` は、未保存の変更がある時だけ表示する。
+変更がない時は非表示にする。
 
-- 現在の表示順をもとに手動並び順を更新する。
-- SortModeを手動並び順へ切り替える。
+#### 右ドラッグ並び替え
 
-キャンセルした場合。
+項目の手動並び替えは、誤操作を避けるため既定では右ボタンドラッグで行う。
 
-- 並び替えしない。
+| 操作 | 挙動 |
+|---|---|
+| 右クリックして動かさず離す | 右クリックメニューを表示 |
+| 右ボタンを押したままドラッグ | 項目の手動並び替え、またはグループへのコピー/移動 |
+| 左ドラッグで外部から中央一覧へドロップ | 新規登録 |
+| 左ドラッグで項目を外部へ出す | 外部アプリへファイル/URL/本文を渡す |
 
-#### 現在の表示順を手動並び順として保存
+右クリックと右ドラッグは、Windowsのドラッグ開始距離を超えた場合だけドラッグ扱いにする。
+タッチパッド利用者のため、上へ/下へボタンは常に残す。
 
-ユーザーが名前順や種類順で表示した後、その順番を固定したい場合に使う。
+#### 保存と復元
 
-例。
+D&Dや上下ボタンで並び替えても、すぐに `SortOrder` を正式保存しない。
+変更は編集中の手動並び順として保持する。
+
+- `並び順を保存`: 編集中の並び順を保存済み手動並び順として確定する
+- `保存前に戻す`: 編集中の並び順を破棄し、最後に保存した手動並び順へ戻す
+
+名前順などの表示用ソート中に右ドラッグや上下移動を行った場合は、その時点の表示順を編集中の手動並び順へコピーし、未保存状態にする。
+`この表示順を手動編集` のような別ボタンは設けない。
+
+#### 未保存確認
+
+並び順に未保存の変更があり、その変更が失われる可能性がある操作では、既定で確認を表示する。
+
+対象例：
+
+- アプリ終了
+- 保存内容の再読み込み
+- インポートによる置き換え
+- 対象グループの削除
+- 初期化
+
+確認文の例：
 
 ```text
-名前順で表示
-→ 現在の順番を手動並び順として保存
-→ その順番が手動並び順として保存される
+並び順に保存していない変更があります。
+
+[保存して続ける]
+[変更を破棄して続ける]
+[キャンセル]
+
+□ 次回からこの選択を自動的に適用する
 ```
+
+「次回からこの選択を自動的に適用する」を選んだ場合は、SettingsFormの詳細設定から戻せるようにする。
+既定値は「毎回確認する」。
 
 #### 選択範囲だけ並び替え
 
-複数選択した範囲だけ、指定した順番で並び替えられるようにする。
+複数選択した項目だけを、名前順、種類順、追加順、更新順などで並び替えられるようにする。
+選択範囲ソートの結果も、まず編集中の手動並び順へ反映する。
+正式保存は `並び順を保存` を押した時だけ行う。
 
-例。
-
-- 10件あるうち、3件だけ選択
-- 選択範囲を名前順に並び替え
-- 選択されていない項目の位置はできるだけ維持
-- 選択範囲内の順番だけ変更
-- 結果は手動並び順として保存する
+---
 
 ### 8.4 右側ボタン
 
@@ -697,6 +725,25 @@ public sealed class BinderItem
 ### 12.4 AppSettings
 
 ```csharp
+public enum ManualReorderInputMode
+{
+    RightDragOnly,
+    LeftOrRightDrag
+}
+
+public enum UnsavedOrderBehavior
+{
+    Ask,
+    AutoSave,
+    Discard
+}
+
+public enum TrashRetentionMode
+{
+    AutoDeleteAfterDays,
+    ManualOnly
+}
+
 public sealed class AppSettings
 {
     public bool FirstRunCompleted { get; set; } = false;
@@ -711,27 +758,41 @@ public sealed class AppSettings
     public bool ConfirmGroupDropCopyMove { get; set; } = true;
 
     public bool EnableItemDragReorder { get; set; } = true;
+    public ManualReorderInputMode ManualReorderInputMode { get; set; } = ManualReorderInputMode.RightDragOnly;
+    public UnsavedOrderBehavior UnsavedOrderBehavior { get; set; } = UnsavedOrderBehavior.Ask;
 
     public bool EnableExternalFileDropOut { get; set; } = true;
     public bool EnableExternalUrlTextDragOut { get; set; } = true;
     public bool EnableExternalTemplateTextDragOut { get; set; } = true;
 
     public bool CloseButtonMinimizesToTray { get; set; } = true;
+    public bool StartMinimizedToTray { get; set; } = false;
+    public bool AutoStartWithWindows { get; set; } = false;
     public bool EnableContextMenuDetails { get; set; } = true;
     public bool ShowBeginnerHints { get; set; } = true;
+    public bool ShowIconLegend { get; set; } = true;
 
     public bool AutoBackupEnabled { get; set; } = true;
     public int MaxBackupCount { get; set; } = 20;
 
     public bool ConfirmBeforeDelete { get; set; } = true;
     public bool MoveDeletedItemsToTrash { get; set; } = true;
+    public TrashRetentionMode TrashRetentionMode { get; set; } = TrashRetentionMode.AutoDeleteAfterDays;
+    public int TrashRetentionDays { get; set; } = 30;
+    public DateTimeOffset? LastTrashExpirationCheckAt { get; set; }
 
     public SearchScope DefaultSearchScope { get; set; } = SearchScope.CurrentGroup;
     public bool SearchTemplateBody { get; set; } = true;
+    public BinderItemType? DefaultTypeFilter { get; set; } = null;
 
     public ItemSortMode DefaultItemSortMode { get; set; } = ItemSortMode.Manual;
 }
 ```
+
+`TrashRetentionDays` は、設定画面では1日以上の値に制限する。
+初期値は30日とする。
+
+---
 
 ### 12.5 SearchScope
 
@@ -773,6 +834,8 @@ public int SortOrder { get; set; }
 
 ### 12.8 DeletedItemRecord
 
+登録のごみ箱に入った項目は、元グループ情報と削除日時を持つ。
+
 ```csharp
 public sealed class DeletedItemRecord
 {
@@ -780,12 +843,16 @@ public sealed class DeletedItemRecord
     public string OriginalGroupId { get; set; } = "";
     public string OriginalGroupName { get; set; } = "";
     public BinderItem Item { get; set; } = new();
-    public DateTime DeletedAt { get; set; } = DateTime.Now;
-    public string DeleteReason { get; set; } = "";
+
+    public DateTimeOffset DeletedAt { get; set; } = DateTimeOffset.UtcNow;
 }
 ```
 
+日時は内部的にはUTC基準で保持する。
+表示時はローカル時刻へ変換する。
+
 ---
+
 
 ## 13. 登録操作
 
@@ -909,13 +976,17 @@ ContextBinder.ItemRefs.v2
 
 外部からのドロップは新規登録として扱う。
 
-内部項目が同じグループ内の中央一覧へドロップされた場合、並び替えとして扱う。
+```text
+ファイル / フォルダ / URL / 選択テキスト
+→ 現在選択中のグループへ追加
+```
 
-条件。
+内部項目の並び替えは、既定では右ボタンドラッグで行う。
+左ドラッグは、外部D&Dや外部アプリへの受け渡しと衝突しやすいため、初期設定では手動並び替えに使わない。
 
-- `ContextBinder.ItemRefs.v2` がある
-- `sourceGroupId == currentGroup.Id`
-- `EnableItemDragReorder == true`
+設定で `LeftOrRightDrag` を選んだ場合のみ、左ドラッグでも内部並び替えを許可する。
+
+---
 
 ### 15.4 左グループ一覧へドロップ
 
@@ -1181,8 +1252,8 @@ Templateは常に正常扱いとする。
 例。
 
 ```text
-選択した5件を削除します。
-この操作は元に戻せますが、完全削除すると戻せません。
+選択した5件の登録を、ContextBinderのごみ箱へ移動します。
+元のファイル、フォルダー、画像、動画は削除されません。
 ```
 
 ### 22.2 Undo
@@ -1196,38 +1267,109 @@ Templateは常に正常扱いとする。
 - 項目移動
 - 項目並び替え
 
-### 22.3 アプリ内ごみ箱
+### 22.3 登録のごみ箱
 
-ごみ箱はWindowsのごみ箱ではなく、ContextBinder内のごみ箱とする。
+ContextBinder v2 のごみ箱は、Windowsのごみ箱ではなく、アプリ内の「登録のごみ箱」として扱う。
 
-理由。
-
-- 削除するのは実ファイルではなく、登録情報である。
-- OSのごみ箱へ入れると意味がズレる。
-
-### 22.4 ごみ箱仕様
+重要な説明：
 
 ```text
-項目削除 → アプリ内ごみ箱へ移動
-ごみ箱から復元 → 元グループへ戻す
-元グループがない場合 → 未分類へ戻す
-完全削除 → ごみ箱から削除
+ここで削除されるのは、ContextBinderへの登録情報だけです。
+元のファイル、フォルダー、画像、動画は削除されません。
 ```
 
-### 22.5 グループ削除時
+この説明は、削除確認、ごみ箱画面上部、設定画面、ごみ箱を空にする確認で表示する。
 
-グループ削除時は中の項目の扱いを選べる。
+### 22.4 表記ルール
+
+実ファイル削除と誤認されないよう、UI文言は次を優先する。
+
+| 避けたい表記 | 推奨表記 |
+|---|---|
+| 削除 | 登録をごみ箱へ |
+| 復元 | 登録を元に戻す |
+| 完全削除 | ごみ箱から登録を削除 |
+| ごみ箱を空にする | ごみ箱内の登録情報をすべて削除 |
+
+削除確認の例：
+
+```text
+選択した3件の登録を、ContextBinderの登録のごみ箱へ移動します。
+
+元のファイルやフォルダーは削除されません。
+
+[登録をごみ箱へ]
+[キャンセル]
+```
+
+ContextBinder v2 は、元ファイルそのものを削除する機能を持たない。
+
+### 22.5 保持期限
+
+登録のごみ箱は、次の保持モードを持つ。
+
+| モード | 内容 |
+|---|---|
+| 指定日数後に自動削除 | `DeletedAt` から指定日数を過ぎた登録情報を削除する |
+| 手動でのみ削除 | ユーザーが削除するまで保持する |
+
+初期値：
+
+```text
+モード：指定日数後に自動削除
+保持日数：30日
+```
+
+期限切れチェックは次のタイミングで行う。
+
+- ContextBinder起動時
+- 起動中は1日1回
+
+ContextBinderを起動していない間は削除処理は走らない。
+起動後のチェックで期限切れ登録があれば、ごみ箱から登録情報だけを削除する。
+元のファイル、フォルダー、画像、動画は削除しない。
+
+期限切れ削除が行われた場合は、ステータス表示で通知する。
+
+```text
+期限を過ぎた登録3件を、ごみ箱から自動削除しました。元のファイルは削除されていません。
+```
+
+長時間起動し続ける場合も、1日1回だけ確認すればよい。
+毎分チェックなどは行わない。
+
+### 22.6 復元
+
+登録をごみ箱から復元する場合：
+
+```text
+元グループが存在する
+→ 元グループへ復元
+
+元グループが削除済み
+→ 未分類へ復元
+```
+
+一度復元した登録を再度ごみ箱へ入れる場合は、その時点で `DeletedAt` を更新する。
+過去の削除日時は引き継がない。
+
+### 22.7 グループ削除時
+
+グループ削除時は、登録情報がどうなるかを明確にする。
 
 ```text
 グループ「○○」を削除します。
 
-中の項目をどうしますか？
+中の登録をどうしますか？
 [未分類へ移動]
-[ごみ箱へ移動]
+[登録のごみ箱へ移動]
 [キャンセル]
+
+元のファイルやフォルダーは削除されません。
 ```
 
 ---
+
 
 ## 23. バックアップ
 
@@ -1339,10 +1481,22 @@ ContextBinder_Data\backups\
 
 ### 25.5 削除と復元
 
-- 削除前に確認する
-- 削除した項目をごみ箱へ移動する
-- ごみ箱を開く
-- ごみ箱を空にする
+```text
+削除と復元
+
+削除した登録：
+○ 30日後に自動削除する
+○ 自動削除せず、手動でのみ削除する
+
+保存日数：[ 30 ] 日
+
+※削除されるのはContextBinderへの登録情報だけです。
+  元のファイル、フォルダー、画像、動画は削除されません。
+```
+
+自動削除OFF時は、保存日数入力を無効化する。
+
+---
 
 ### 25.6 常駐
 
@@ -1548,44 +1702,60 @@ ContextBinder/
 
 ### 32.2 項目並び替えService方針
 
-並び替え処理はMainFormに直書きしない。
+MainFormに並び替え処理を直書きしない。
 
-候補Service。
+候補：
 
 - `ItemOrderingService`
 - `ItemSortService`
 
-責務。
+責務：
 
-- 手動並び順の正規化
+- 保存済み手動並び順の正規化
+- 編集中の手動並び順の作成と保持
+- 右ドラッグD&D並び替え
 - 上へ移動
 - 下へ移動
-- D&D並び替え
-- 現在の表示順を手動並び順として保存
-- SortModeに応じた表示順作成
+- 保存前に戻す
+- 並び順を保存
+- 一つ前の保存済み手動並び順への復元
+- 表示用ソートの作成
+- 表示用ソート中に手動変更した場合のドラフト化
 - 選択範囲内ソート
+- 未保存確認の要否判定
 
-MainForm / Presenter側の責務。
+### 32.3 追加テスト候補
 
-- UIから選択状態とSortModeを受け取る
-- Serviceへ処理を委譲する
-- 結果をDataGridViewへ反映する
-- 必要なら保存する
-
-### 32.3 項目並び替えテスト候補
+並び替え：
 
 - Manual順で表示される
 - Name順へ切り替えてもSortOrderは壊れない
 - Type順へ切り替えてもSortOrderは壊れない
-- 手動並び順へ戻すと元の順番に戻る
-- 上へ移動でSortOrderが更新される
-- 下へ移動でSortOrderが更新される
-- D&D後にSortOrderが更新される
-- 現在の表示順を手動並び順として保存できる
+- 手動並び順へ戻すと保存済み手動順に戻る
+- 右ドラッグ後は未保存状態になる
+- 上へ移動で編集中の手動並び順が更新される
+- 下へ移動で編集中の手動並び順が更新される
+- 並び順を保存するとSortOrderが更新される
+- 保存前に戻すと最後に保存した手動順へ戻る
+- 未保存変更がない時は未保存表示が出ない
+- 未保存変更がある時だけ未保存表示が出る
+- 未保存確認で「次回から自動適用」を選ぶと設定へ保存される
 - 選択範囲だけ名前順にできる
 - 選択外の項目位置が不必要に崩れない
 
+登録のごみ箱：
+
+- 登録のごみ箱へ移動しても元ファイルは削除されない
+- DeletedAtが保存される
+- 30日を過ぎた登録情報だけ自動削除される
+- 手動削除のみ設定では期限切れ削除されない
+- 起動時チェックで期限切れ登録が削除される
+- 起動中1日1回チェックで期限切れ登録が削除される
+- 1日以内に同じ期限チェックが繰り返し走らない
+- 復元時に元グループがなければ未分類へ戻る
+
 ---
+
 
 ## 33. MVP範囲
 
