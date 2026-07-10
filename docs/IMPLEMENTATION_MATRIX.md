@@ -1,5 +1,8 @@
 # ContextBinder v2 実装状況まとめ
 
+> UIを作るときは、まず [`UI_SCREEN_MAP.md`](UI_SCREEN_MAP.md) を見てください。
+> この文書は、各機能が今どこまで実装されているかを確認するための棚卸しです。
+
 この文書は、ContextBinder v2 の「今どこまでできていて、次に何を作るか」を見るための棚卸しです。
 
 細かい関連ファイルや実装詳細は、必要になったタイミングで Codex に確認させます。ここでは、少佐が開発順を判断しやすい粒度に絞ります。
@@ -8,6 +11,7 @@
 
 | 見たいこと | 見る場所 |
 |---|---|
+| UI全体と画面一覧 | [`UI_SCREEN_MAP.md`](UI_SCREEN_MAP.md) |
 | 今すぐ使える機能 | [実装済み](#実装済み) |
 | 入口はあるが未完成の機能 | [土台あり・要仕上げ](#土台あり要仕上げ) |
 | これから作る機能 | [未実装](#未実装) |
@@ -52,92 +56,65 @@
 
 | 機能名 | 現状 | 関連ファイル | UIの有無 | 処理の有無 | テストの有無 | 次に必要な作業 | 優先度 |
 |---|---|---|---|---|---|---|---|
-| 詳細表示 | UIのみ | `Forms/MainForm.cs` | あり | MessageBoxで簡易表示 | なし | `ItemDetailForm` をDesigner-firstで追加 | 中 |
-| 削除 | 土台あり | `Forms/MainForm.cs`, `Services/TrashService.cs`, `Models/DeletedItemRecord.cs` | あり | 削除確認、アプリ内ごみ箱記録あり | なし | ごみ箱画面、復元、完全削除 | 高 |
-| 設定値保存 | 土台あり | `Models/AppSettings.cs`, `Services/AppSettingsFactory.cs` | なし | 設定値の保存土台のみ | あり（一部設定値） | `SettingsForm` をDesigner-firstで追加 | 高 |
-| 検索 | 土台あり | `Services/SearchService.cs`, `Models/SearchScope.cs`, `Models/AppSettings.cs` | なし | Serviceはキーワード検索可能 | なし | MainFormの検索UI接続 | 中 |
-| D&D追加 | 土台あり | `Forms/MainForm.cs`, `Services/DragDropService.cs`, `Services/FileTypeDetector.cs` | あり | ファイル/テキストの追加は可能 | なし | 設定値反映、タイトル確認、重複時ジャンプ | 高 |
-| 項目並び替え | 土台あり | `Models/AppSettings.cs`, `Forms/MainForm.cs`, `Models/BinderItem.cs` | なし | 設定値のみ。手動並び順保存は未実装 | なし | D&D、上へ移動/下へ移動、選択範囲内並び替え、手動並び順保存 | 高 |
-| ファイル存在チェック | 土台あり | `Forms/MainForm.cs` | 状態列あり | 表示時に存在確認 | なし | 再チェック、警告表示、まとめて確認 | 中 |
-| ごみ箱 | 土台あり | `Services/TrashService.cs`, `Models/DeletedItemRecord.cs`, `Models/ContextBinderStore.cs` | なし | 削除時記録のみ | なし | `RecycleBinForm`、復元、完全削除 | 高 |
-| バックアップ | 土台あり | `Services/BackupService.cs`, `Services/StoreService.cs`, `Models/AppSettings.cs` | なし | 保存時バックアップ、保持数削除 | あり（一部） | 起動時バックアップ、設定画面、フォルダを開く | 中 |
+| 詳細 | UIのみ存在 | `Forms/MainForm.cs` | あり | MessageBoxで簡易表示 | なし | `ItemDetailForm` をDesigner-firstで追加 | 中 |
+| 削除 | 土台のみ存在 | `Forms/MainForm.cs`, `Services/TrashService.cs`, `Models/DeletedItemRecord.cs` | あり | 削除確認、アプリ内ごみ箱記録あり | なし | ごみ箱画面、復元、完全削除 | 高 |
+| 検索 | 土台のみ存在 | `Services/SearchService.cs`, `Models/SearchScope.cs`, `Models/AppSettings.cs` | なし | Serviceはキーワード検索可能 | なし | MainFormの検索UI接続 | 中 |
+| D&D追加 | 土台のみ存在 | `Forms/MainForm.cs`, `Services/DragDropService.cs`, `Services/FileTypeDetector.cs` | あり | ファイル/テキストの追加は可能 | なし | 設定値反映、タイトル確認、重複時ジャンプ | 高 |
+| ファイル存在チェック | 土台のみ存在 | `Forms/MainForm.cs` | 状態列あり | 表示時に存在確認 | なし | 再チェック、警告表示、まとめて確認 | 中 |
+| ごみ箱 | 土台のみ存在 | `Services/TrashService.cs`, `Models/DeletedItemRecord.cs`, `Models/ContextBinderStore.cs` | なし | 削除時記録のみ | なし | `RecycleBinForm`、復元、完全削除 | 高 |
+| バックアップ | 土台のみ存在 | `Services/BackupService.cs`, `Services/StoreService.cs`, `Models/AppSettings.cs` | なし | 保存時バックアップ、保持数削除 | あり（一部） | 起動時バックアップ、設定画面、フォルダを開く | 中 |
 
 ---
 
 ## 未実装
 
-| 機能名 | 現状 | 関連ファイル | UIの有無 | 処理の有無 | テストの有無 | 次に必要な作業 | 優先度 |
-|---|---|---|---|---|---|---|---|
-| SettingsForm | 未実装 | `Models/AppSettings.cs`, `Services/AppSettingsFactory.cs` | なし | 設定値の保存土台のみ | あり（一部設定値） | Designer-firstで画面作成、`AppSettings`へ接続 | 高 |
-| 絞り込み | 未実装 | `Models/BinderItemType.cs` | なし | 種類フィルター未実装 | なし | 種類フィルターUIと検索Service拡張 | 中 |
-| 表示用ソート | 未実装 | `Models/AppSettings.cs`, `Models/BinderItem.cs`, `Forms/MainForm.cs` | なし | 未実装 | なし | 手動並び順、名前順、種類/ジャンル順、追加順、更新順、参照先順の切り替え | 中〜高 |
-| 選択範囲ソート | 未実装 | `Forms/MainForm.cs` | なし | 未実装 | なし | 選択中の複数項目だけを名前順/種類順/追加順などで並べ替え、手動並び順として保存 | 中 |
-| 右クリック種類別メニュー | 未実装 | `Forms/MainForm.cs`, `Services/ItemActionService.cs`, `Services/ClipboardService.cs` | 基本メニューのみ | 種類別メニューはTODO | なし | 種類別の開く/コピー/フォルダーを開く等を追加 | 中 |
-| グループ間コピー/移動 | 未実装 | `Models/BinderGroup.cs`, `Models/BinderItem.cs` | なし | 未実装 | なし | グループD&D、コピー/移動確認 | 中 |
-| 外部D&D | 未実装 | `Models/AppSettings.cs` | なし | 設定値のみ | あり（一部設定値） | DataObject生成、ドラッグ開始処理 | 中 |
-| Undo | 未実装 | なし | なし | 未実装 | なし | 削除直後Undoから検討 | 中 |
-| バックアップ復元 | 未実装 | `Services/BackupService.cs` | なし | 未実装 | なし | `BackupRestoreDialog` と復元処理 | 中 |
-| インポート/エクスポート | 未実装 | `Services/StoreService.cs` | なし | 未実装 | なし | 読み込み/書き出しServiceとDialog | 中 |
-| BOOTH配布用publish | 未実装 | `ContextBinder.csproj`, `README.md` | なし | publish手順/ZIP作成未整備 | なし | publishプロファイル、ZIP作成手順、同梱物確認 | 中 |
+| 機能名 | 関連ファイル | 次に必要な作業 | 優先度 |
+|---|---|---|---|
+| 設定画面 | `Models/AppSettings.cs`, `Services/AppSettingsFactory.cs` | `SettingsForm` をDesigner-firstで追加 | 高 |
+| 絞り込み | `Models/BinderItemType.cs` | 種類フィルターUIと検索Service拡張 | 中 |
+| 右クリック種類別メニュー | `Forms/MainForm.cs`, `Services/ItemActionService.cs`, `Services/ClipboardService.cs` | 種類別の開く/コピー/フォルダーを開く等を追加 | 中 |
+| グループ間コピー/移動 | `Models/BinderGroup.cs`, `Models/BinderItem.cs` | グループD&D、コピー/移動確認 | 中 |
+| 外部D&D | `Models/AppSettings.cs` | DataObject生成、ドラッグ開始処理 | 中 |
+| Undo | なし | 削除直後Undoから検討 | 中 |
+| バックアップ復元 | `Services/BackupService.cs` | `BackupRestoreDialog` と復元処理 | 中 |
+| インポート/エクスポート | `Services/StoreService.cs` | 読み込み/書き出しServiceとDialog | 中 |
+| BOOTH配布用publish | `ContextBinder.csproj`, `README.md` | publishプロファイル、ZIP作成手順、同梱物確認 | 中 |
 
 ---
 
 ## 準MVPに追加する表示・操作UI
 
-| 機能 | 状態 | 実装方針 | 優先度 |
+| 機能名 | 現状 | 内容 | 優先度 |
 |---|---|---|---|
-| 操作ボタン表示モード | 未実装 | 初心者向け文字つきボタン / コンパクトアイコンボタンを切り替える | 中〜高 |
-| 上部メニューバー | 未実装 | DesignerでMenuStripを配置し、ファイル/登録/編集/表示/ツール/ヘルプを接続 | 中〜高 |
-| 画像サムネイル表示 | 未実装 | 画像ファイルのサムネイル列、キャッシュ、読み込み失敗時フォールバック | 中 |
-| 動画サムネイル表示 | 未実装 | Windows Shellサムネイル優先。FFmpeg同梱はライセンス/配布/速度に注意 | 中〜低 |
+| 操作ボタン表示モード | 未実装 | 初心者向け文字ボタン / コンパクトアイコンボタン | 中〜高 |
+| 上部メニューバー | 未実装 | ファイル / 登録 / 編集 / 表示 / ツール / ヘルプ | 中〜高 |
+| 画像サムネイル表示 | 未実装 | 画像のサムネイルを一覧表示 | 中 |
+| 動画サムネイル表示 | 未実装 | 動画のサムネイルを一覧表示。配布・速度に注意 | 中〜低 |
+| 項目並び替え | 土台あり | D&D、上下ボタン、手動順保存 | 高 |
+| 表示用ソート | 未実装 | 手動 / 名前 / 種類 / 追加 / 更新順 | 中〜高 |
+| 選択範囲ソート | 未実装 | 選択した項目だけ指定順で並べ、手動順として保存 | 中 |
 
 ---
 
 ## 準MVPに昇格した機能
 
-以下は「いつかやる」ではなく、設定画面を作るタイミングで優先して入れたい機能です。
-
-| 機能 | 状態 | 実装方針 | 優先度 |
-|---|---|---|---|
-| スタートメニュー登録 | 未実装 | ユーザー単位のStart Menuへショートカット作成 | 中〜高 |
-| スタートメニュー登録解除 | 未実装 | 作成したショートカットを削除 | 中〜高 |
-| Windows起動時自動起動 | 未実装 | Startupフォルダへショートカット作成 | 高 |
-| Windows起動時自動起動解除 | 未実装 | Startupフォルダのショートカット削除 | 高 |
-| 起動時最小化 | 未実装 | `StartMinimizedToTray` を設定に追加 | 高 |
-| ショートカット修復 | 未実装 | exe移動後にリンク先を現在のexeへ更新 | 中 |
+| 機能名 | 分類 | 現状 | 次に必要な作業 | 優先度 |
+|---|---|---|---|---|
+| スタートメニュー登録 | 配布・導入補助 | 未実装 | `ShortcutService` と SettingsForm のボタン追加 | 中〜高 |
+| スタートメニュー登録解除 | 配布・導入補助 | 未実装 | ユーザー単位Start Menuショートカット削除 | 中〜高 |
+| Windows起動時自動起動 | 常駐・起動 | 未実装 | Startupフォルダへのショートカット作成 | 高 |
+| Windows起動時自動起動解除 | 常駐・起動 | 未実装 | Startupフォルダのショートカット削除 | 高 |
+| 起動時最小化 | 常駐・起動 | 未実装 | `StartMinimizedToTray` を追加して起動時に反映 | 高 |
+| ショートカット修復 | 配布・導入補助 | 未実装 | exe移動後にStart Menu/Startupリンク先を更新 | 中 |
 
 ---
 
 ## 推奨順
 
-現時点では、機能追加よりも先に「少佐がUIを作り、Codexが機能を接続する流れ」を固めるのが優先です。
-
-1. **PR #4を整理・確定する**  
-   実装状況とUI契約を分かりやすくする。
-
-2. **MainFormを少佐所有UIとして作り直す**  
-   `docs/UI_CONTROL_CONTRACT.md` のName契約に従って、少佐がDesignerで画面を作る。
-
-3. **CodexがMainFormをPresenter/Serviceへ接続する**  
-   既存のグループ管理、追加、開く、コピー、保存などを新UIへ接続する。
-
-4. **SettingsFormをDesigner-firstで作る**  
-   設定変更、スタートメニュー登録、Windows自動起動、起動時最小化、操作ボタン表示モード、サムネイル表示を入れる。
-
-5. **項目並び替えと表示用ソートを接続する**  
-   D&D/上下移動/現在順保存/選択範囲ソートを、手動並び順を壊さない形でServiceへ分離する。
-
-6. **検索・絞り込みをMainFormへ接続する**
-
-7. **ごみ箱、復元、完全削除を実装する**
-
-8. **インポート/エクスポート、バックアップ復元、BOOTH配布を整える**
-
----
-
-## Codexに次回依頼するときの短い指示
-
-```text
-このPRでは、docs/IMPLEMENTATION_MATRIX.md と docs/UI_CONTROL_CONTRACT.md を基準にしてください。
-少佐がDesignerで作ったUIの配置・Text・Size・Margin・Padding・Dock・Anchorを勝手に作り直さず、Name契約に従ってPresenter/Serviceへ接続してください。
-```
+1. 少佐が [`UI_SCREEN_MAP.md`](UI_SCREEN_MAP.md) に沿ってMainFormをDesignerで作る。
+2. Codexが `UI_CONTROL_CONTRACT.md` のNameに既存機能を接続する。
+3. `SettingsForm` をDesigner-firstで追加し、既存設定と保存を接続する。
+4. `ShortcutService` を追加し、スタートメニュー登録とWindows自動起動を実装する。
+5. 検索・絞り込み・並び替えをMainFormへ接続する。
+6. ごみ箱画面を追加し、復元と完全削除を実装する。
+7. バックアップ復元、インポート/エクスポート、BOOTH向けpublishを整える。
