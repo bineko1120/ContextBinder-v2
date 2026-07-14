@@ -1,0 +1,710 @@
+# ContextBinder v2 UI画面設計マップ
+
+この文書は、**少佐がContextBinder v2のUIをVisual Studio Designerで作るとき、最初に見る1枚の設計図**です。
+
+- **UIの見た目・文言・配置：少佐が担当**
+- **実際に動く処理・保存・テスト：Codexが担当**
+- 少佐は、この文書を見ながら画面とコントロールを配置する
+- Codexは、`Name` 契約に従って処理を接続する
+
+細かい実装状況は [`IMPLEMENTATION_MATRIX.md`](IMPLEMENTATION_MATRIX.md)、厳密なコントロール名は [`UI_CONTROL_CONTRACT.md`](UI_CONTROL_CONTRACT.md) を参照してください。
+
+---
+
+## 1. まず作る順番
+
+全部の画面を一度に完成させる必要はありません。次の順番がおすすめです。
+
+1. **MainForm**  
+   毎日使う中心画面。最優先。
+2. **SettingsForm**  
+   表示、操作、バックアップ、自動起動などを変更する画面。
+3. **ItemEditForm / TemplateEditForm**  
+   登録内容を追加・編集する画面。
+4. **ItemDetailForm / CopyMoveDialog**  
+   詳細確認とグループ間コピー・移動。
+5. **RecycleBinForm**  
+   登録のごみ箱、復元、登録情報削除。
+6. **ImportExportDialog / BackupRestoreDialog**  
+   登録内容の移行と復元。
+7. **FirstRunSetupForm**  
+   すでに動く土台はあるため、最後に見た目を仕上げてもよい。
+
+未実装のボタンやメニューは、先に置いて構いません。実装されるまでは `Enabled = false` にしておけば安全です。
+
+---
+
+## 2. 画面一覧と現在地
+
+| 画面 | 目的 | 現在の状態 | UI優先度 |
+|---|---|---|---|
+| `MainForm` | グループと項目を管理する中心画面 | 基本機能あり。少佐デザインへ移行したい | 最優先 |
+| `SettingsForm` | 設定を後から変更する | 未実装 | 高 |
+| `FirstRunSetupForm` | 初回の保存場所・基本設定 | 基本機能あり。見た目調整が必要 | 中 |
+| `ItemEditForm` | ファイル・フォルダー・URL等を編集 | 基本機能あり | 高 |
+| `TemplateEditForm` | テンプレート本文を編集 | 専用画面は未完成 | 高 |
+| `ItemDetailForm` | 登録内容の詳細確認 | 簡易表示のみ | 中 |
+| `CopyMoveDialog` | 他グループへコピー・移動 | 未実装 | 中 |
+| `RecycleBinForm` | 登録のごみ箱、復元、登録情報削除 | 未実装 | 高 |
+| `ImportExportDialog` | 登録内容の読み込み・書き出し | 未実装 | 中 |
+| `BackupRestoreDialog` | バックアップから復元 | 未実装 | 中 |
+| `AboutForm` | バージョン・権利情報 | 未実装 | 低 |
+
+---
+
+# 3. MainForm
+
+## 目的
+
+ContextBinderの中心画面です。
+
+- グループを選ぶ
+- ファイル、フォルダー、URL、テンプレートを登録する
+- 登録項目を開く・コピー・編集・削除する
+- 検索、絞り込み、並び替え、表示方法を切り替える
+
+## 推奨レイアウト
+
+```text
+┌────────────────────────────────────────────────────┐
+│ MenuStrip                                           │
+├────────────────────────────────────────────────────┤
+│ 検索 / 絞り込み / 並び順 / 表示方法                 │
+├─────────────┬──────────────────────┬───────────────┤
+│ グループ一覧 │ 項目一覧              │ 操作ボタン     │
+│             │ 一覧 / サムネイル     │ 初心者/コンパクト│
+├─────────────┴──────────────────────┴───────────────┤
+│ ステータス                                         │
+│ 使い方のヒント（表示切替）                         │
+│ アイコンの意味（表示切替）                         │
+└────────────────────────────────────────────────────┘
+```
+
+## 最低限必要なコントロール
+
+| Name | 種類 | 表示例 |
+|---|---|---|
+| `groupListBox` | `ListBox` | グループ一覧 |
+| `itemGridView` | `DataGridView` | 項目一覧 |
+| `addGroupButton` | `Button` | グループ追加 |
+| `addFileButton` | `Button` | ファイル追加 |
+| `addFolderButton` | `Button` | フォルダー追加 |
+| `addUrlButton` | `Button` | URL追加 |
+| `addTemplateButton` | `Button` | テンプレート追加 |
+| `openButton` | `Button` | 開く |
+| `copyButton` | `Button` | コピー |
+| `editButton` | `Button` | 編集 |
+| `deleteButton` | `Button` | 削除 |
+| `statusLabel` | `Label` | 操作結果 |
+
+これらは現在の基本機能へ接続できます。
+
+## 置いておきたい基本入口
+
+| Name | 種類 | 現在の実装 |
+|---|---|---|
+| `detailButton` | `Button` | 簡易表示あり。本格画面は未実装 |
+| `settingsButton` | `Button` | 未実装 |
+| `trashButton` | `Button` | 未実装 |
+| `importButton` | `Button` | 未実装 |
+| `exportButton` | `Button` | 未実装 |
+| `undoButton` | `Button` | 未実装 |
+| `moveUpButton` | `Button` | 未実装 |
+| `moveDownButton` | `Button` | 未実装 |
+
+未実装ボタンは、先に配置して `Enabled = false` で構いません。
+
+## MenuStrip
+
+上部に普通のWindowsツールらしいメニューバーを置きます。
+
+```text
+ファイル
+  登録内容を書き出す
+  登録内容を読み込む
+  終了
+
+登録
+  グループ追加
+  ファイル追加
+  フォルダー追加
+  URL追加
+  テンプレート追加
+
+編集
+  開く
+  コピー
+  編集
+  詳細
+  削除
+  元に戻す
+  上へ移動
+  下へ移動
+
+表示
+  使い方のヒント
+  アイコンの意味
+  操作ボタン表示
+  一覧 / サムネイル
+  並び順
+
+ツール
+  設定
+  ごみ箱
+  バックアップ
+  ショートカット修復
+
+ヘルプ
+  使い方
+  バージョン情報
+```
+
+厳密な `Name` は [`UI_CONTROL_CONTRACT.md`](UI_CONTROL_CONTRACT.md) の「MainForm MenuStrip」を参照してください。
+
+## 操作ボタン表示モード
+
+### 初心者向け
+
+- 文字つきの大きめボタン
+- 初期値はこちら
+- 初見でも何をするボタンか分かる
+
+配置先：`beginnerActionPanel`
+
+### コンパクト
+
+- アイコン中心の小さいボタン
+- マウスを乗せるとToolTipで操作名を表示
+- 必要なら画面下部へ説明を表示
+
+配置先：`compactActionToolStrip` または `compactActionPanel`
+
+両方の領域をDesignerで用意し、設定に応じて片方だけ表示する設計がおすすめです。
+
+## 検索・絞り込み
+
+| Name | 用途 |
+|---|---|
+| `searchTextBox` | 検索キーワード |
+| `searchButton` | 検索実行 |
+| `clearSearchButton` | 検索解除 |
+| `searchScopeComboBox` | 現在のグループ / 全体 |
+| `typeFilterComboBox` | すべて / フォルダー / ファイル / 画像 / 動画 / URL / テンプレート |
+
+検索Serviceの土台はありますが、MainFormとの接続は未実装です。
+
+## 並び替え・ソート
+
+置くもの：
+
+- `sortModeComboBox`
+- `moveUpButton`
+- `moveDownButton`
+- `saveManualOrderButton`
+- `revertUnsavedOrderButton`
+- `orderUnsavedStatusLabel`
+- `sortSelectedButton` 任意
+- `sortSelectedModeComboBox` 任意
+
+初心者向けボタン表示では、文字つきボタンを常時表示する。
+コンパクト表示では、同じ機能を文字なしアイコンボタンとして表示し、ToolTipまたはホバー説明で意味を出す。
+
+表示例：
+
+```text
+並び方：[手動並び順 ▼]
+
+[↑ 上へ]
+[↓ 下へ]
+[並び順を保存]
+[保存前に戻す]
+
+● 並び順に未保存の変更があります
+```
+
+`orderUnsavedStatusLabel` は、未保存の並び替えがある時だけ表示する。
+
+動作：
+
+- 既定では右ドラッグで手動並び替えする
+- 上へ/下へボタンでも手動並び替えできる
+- D&Dや上下移動だけでは正式保存しない
+- `並び順を保存` を押した時だけ正式な手動並び順として保存する
+- `保存前に戻す` で最後に保存した手動並び順へ戻す
+- 名前順、種類順、追加順、更新順へ切り替えても保存済み手動順は壊さない
+- 表示用ソート中に手動変更した場合は、現在の表示順を編集中の手動順へコピーして未保存状態にする
+
+まだ未実装で置いてよいもの：
+
+- `sortSelectedButton`
+- `sortSelectedModeComboBox`
+- `restorePreviousManualOrderButton`
+- `undoOrderMoveButton`
+
+---
+
+## 一覧・サムネイル表示
+
+候補表示モード：
+
+- 一覧
+- サムネイルつき一覧
+- 大きいサムネイル
+
+まず画像サムネイルを実装し、動画サムネイルは次段階にします。
+
+候補コントロール：
+
+| Name | 用途 |
+|---|---|
+| `itemVisualModeComboBox` | 表示モード切替 |
+| `thumbnailSizeComboBox` | サムネイルサイズ |
+| `thumbnailSizeTrackBar` | サイズ調整 |
+| `itemThumbnailColumn` | 一覧内サムネイル列 |
+
+サムネイル機能は未実装です。
+
+## 下部エリア
+
+| Name | 用途 |
+|---|---|
+| `showBeginnerHintsCheckBox` | 使い方のヒント表示切替 |
+| `beginnerHintsGroupBox` | 使い方のヒント |
+| `showIconMeaningCheckBox` | アイコンの意味表示切替 |
+| `iconMeaningGroupBox` | アイコンの意味 |
+| `iconMeaningPanel` | 猫アイコン説明の配置先 |
+
+表示ON/OFFの保存処理は実装済みです。
+
+---
+
+# 4. SettingsForm
+
+## 目的
+
+初回設定後に、表示や操作方法を変更する画面です。
+
+未実装なので、少佐がDesignerで先に作って構いません。
+
+## 推奨カテゴリ
+
+### 表示
+
+- 種類表示：アイコン＋文字 / アイコンのみ / 文字のみ / 非表示
+- 操作ボタン：初心者向け / コンパクト
+- 項目表示：一覧 / サムネイル
+- サムネイルサイズ
+- 使い方のヒントを表示
+- アイコンの意味を表示
+
+### D&D
+
+置くもの：
+
+- `confirmTitleOnDropAddCheckBox`
+- `enableGroupDropModifierShortcutsCheckBox`
+- `confirmGroupDropCopyMoveCheckBox`
+- `enableItemDragReorderCheckBox`
+- `manualReorderInputModeComboBox`
+- `enableExternalUrlTextDragOutCheckBox`
+- `enableExternalTemplateTextDragOutCheckBox`
+
+`manualReorderInputModeComboBox` の候補：
+
+- 右ドラッグだけで並び替える（おすすめ）
+- 左ドラッグまたは右ドラッグで並び替える
+
+---
+
+### 検索・並び順
+
+置くもの：
+
+- `defaultSearchScopeComboBox`
+- `searchTemplateBodyCheckBox`
+- `defaultItemSortModeComboBox`
+- `unsavedOrderBehaviorComboBox`
+
+`unsavedOrderBehaviorComboBox` の候補：
+
+- 毎回確認する
+- 自動的に保存する
+- 自動的に破棄する
+
+「次回からこの選択を自動的に適用する」で保存された設定は、この画面から戻せるようにする。
+
+---
+
+### バックアップ・削除
+
+置くもの：
+
+- `enableAutoBackupCheckBox`
+- `backupRetentionNumericUpDown`
+- `openBackupFolderButton`
+- `exportButton`
+- `confirmDeleteCheckBox`
+- `moveDeletedItemsToTrashCheckBox`
+- `trashRetentionAutoRadioButton`
+- `trashRetentionManualOnlyRadioButton`
+- `trashRetentionDaysNumericUpDown`
+- `trashRetentionExplanationLabel`
+- `emptyTrashButton`
+
+表示する説明：
+
+```text
+削除されるのはContextBinderへの登録情報だけです。
+元のファイル、フォルダー、画像、動画は削除されません。
+```
+
+既定値：
+
+- 登録のごみ箱は30日後に自動削除
+- 手動削除のみも選べる
+
+---
+
+### 常駐・起動
+
+- 閉じるボタンでタスクトレイへ格納
+- Windows起動時に自動起動
+- 自動起動時に最小化/タスクトレイで起動
+- スタートメニューに登録
+- スタートメニューから削除
+- ショートカット修復
+
+### 保存場所
+
+- 現在の保存場所表示
+- 登録内容と設定フォルダを開く
+- 保存場所変更
+- 既存内容の移行
+
+保存場所変更・移行は未実装です。
+
+## 画面下部ボタン
+
+| Name | 用途 |
+|---|---|
+| `okButton` | 保存して閉じる |
+| `applyButton` | 保存して画面を開いたままにする |
+| `cancelButton` | 変更を破棄して閉じる |
+| `restoreDefaultsButton` | 初期値へ戻す |
+
+---
+
+# 5. FirstRunSetupForm
+
+## 目的
+
+初回起動時に、保存場所と基本設定を選びます。
+
+基本機能は実装済みです。少佐が見た目を作り直す場合も、4ステップ構成を維持します。
+
+## Step 1：始め方
+
+- 初心者おすすめ設定
+- カスタム設定
+- ContextBinderの短い説明
+
+## Step 2：保存場所
+
+- 通常の場所に保存
+- アプリフォルダに保存
+- 自分で選んだ場所に保存
+- 保存先プレビュー
+- 保存されるもの / 保存されないもの
+
+## Step 3：使いやすさ設定
+
+- 表示
+- D&D
+- 常駐
+- バックアップ
+- 削除
+- 検索
+
+## Step 4：確認して開始
+
+- 始め方
+- 保存先
+- 主な設定
+- 作成されるファイル/フォルダ
+- 保存されるもの / 保存されないもの
+
+## 共通ボタン
+
+- 戻る
+- 次へ
+- 開始
+- キャンセル
+
+---
+
+# 6. ItemEditForm
+
+## 目的
+
+ファイル、フォルダー、画像、動画、URLの追加・編集を行います。
+
+基本機能はありますが、少佐デザインの画面へ整理したい対象です。
+
+## 必要項目
+
+- 種類
+- タイトル
+- パスまたはURL
+- 参照ボタン
+- 所属グループ
+- 既存ファイルの存在状態
+
+## ボタン
+
+- 保存
+- キャンセル
+- 参照先を開く
+
+---
+
+# 7. TemplateEditForm
+
+## 目的
+
+定型文やCodex指示文などのテンプレートを編集します。
+
+専用画面は未完成です。
+
+## 必要項目
+
+- タイトル
+- 本文
+- 文字数
+- プレビュー
+- 所属グループ
+
+## ボタン
+
+- 保存
+- キャンセル
+- 本文をコピー
+
+---
+
+# 8. ItemDetailForm
+
+## 目的
+
+登録内容を変更せずに確認します。
+
+現在は簡易表示のみです。
+
+## 共通表示
+
+- タイトル
+- 種類
+- 所属グループ
+- 作成日時
+- 更新日時
+
+## ファイル・フォルダー系
+
+- パス
+- 存在確認
+- 開く
+- 置いてあるフォルダーを開く
+- パスをコピー
+
+## URL
+
+- URL
+- ブラウザで開く
+- URLをコピー
+
+## テンプレート
+
+- 本文プレビュー
+- 文字数
+- 本文をコピー
+- 編集
+
+---
+
+# 9. CopyMoveDialog
+
+## 目的
+
+選択項目を他グループへコピーまたは移動します。
+
+未実装です。
+
+## 必要項目
+
+- 対象項目数
+- 移動先グループ
+- コピー / 移動
+- 重複があった場合の扱い
+
+## ボタン
+
+- 実行
+- キャンセル
+
+---
+
+# 10. RecycleBinForm / 登録のごみ箱
+
+目的：
+
+削除したContextBinderの登録情報を確認、復元、または削除する。
+
+重要：
+
+```text
+ここで削除されるのは、ContextBinderへの登録情報だけです。
+元のファイル、フォルダー、画像、動画は削除されません。
+```
+
+状態：
+
+- 未実装
+
+少佐が配置するもの：
+
+- `trashMeaningNoticeLabel`
+- `trashGridView`
+- `restoreRegistrationButton`
+- `removeRegistrationFromTrashButton`
+- `emptyRegistrationTrashButton`
+- `closeButton`
+
+`trashGridView` に欲しい列：
+
+- 種類
+- タイトル
+- 元のグループ
+- 参照先または内容
+- ごみ箱へ入れた日時
+- 自動削除予定日
+
+手動削除のみ設定の場合、自動削除予定日は「手動で削除するまで保持」と表示する。
+
+Codexが接続する機能：
+
+- 元グループへ復元
+- 元グループがなければ未分類へ復元
+- 選択した登録情報をごみ箱から削除
+- ごみ箱内の登録情報をすべて削除
+- 起動時の期限切れ削除
+- 起動中1日1回の期限切れ削除
+
+注意：
+
+- 元ファイルを削除する機能は持たない
+- ごみ箱へ再度入れた場合は、その時点で削除日時を更新する
+
+---
+
+# 11. ImportExportDialog
+
+## 目的
+
+登録内容を別の場所へ書き出したり、読み込んだりします。
+
+未実装です。
+
+## 書き出し
+
+- 全体を書き出す
+- 保存先を選ぶ
+- 実ファイルは含まれない説明
+
+## 読み込み
+
+- 現在の登録内容を置き換える
+- 現在の登録内容へ追加する
+- 重複時の扱い
+
+---
+
+# 12. BackupRestoreDialog
+
+## 目的
+
+自動バックアップ一覧から、以前の状態へ戻します。
+
+未実装です。
+
+## 必要項目
+
+- バックアップ日時
+- ファイル名
+- サイズ
+- 復元前に現在状態をバックアップする説明
+
+## ボタン
+
+- 復元
+- バックアップフォルダを開く
+- 削除
+- 閉じる
+
+---
+
+# 13. AboutForm / 使い方
+
+## AboutForm
+
+- アプリ名
+- バージョン
+- 作者表記
+- 利用規約
+- 猫アイコン素材の権利表記
+
+## 使い方
+
+最初は外部ドキュメントを開く方式でも構いません。
+
+- 基本操作
+- D&D
+- 並び替え
+- 保存場所
+- バックアップ
+- ごみ箱
+
+---
+
+# 14. 少佐がUIを作り終えた後、Codexへ渡すもの
+
+画面を作ったら、Codexへ次のように伝えます。
+
+```text
+ContextBinder v2 のUIをVisual Studio Designerで作成しました。
+
+- Designer管理のText / Size / Location / Margin / Padding / Dock / Anchorを変更しないでください。
+- docs/UI_SCREEN_MAP.md と docs/UI_CONTROL_CONTRACT.md のName契約に従ってください。
+- 現在配置済みのコントロールへ、既存機能をPresenter / Service経由で接続してください。
+- 未実装機能の入口は、実装されるまでDisabledのまま維持してください。
+- UI変更が必要な場合は、変更前に理由と対象を報告してください。
+```
+
+---
+
+# 15. 最初に少佐が作る範囲
+
+まずはMainFormだけで十分です。
+
+最低限：
+
+- MenuStrip
+- グループ一覧
+- 項目一覧
+- 初心者向け操作ボタン領域
+- コンパクト操作ボタン領域
+- 検索・絞り込み領域
+- 並び替え領域
+- ステータス
+- 使い方のヒント
+- アイコンの意味
+
+SettingsForm以降は、MainFormのデザインと機能接続が成功してから順番に作れば問題ありません。

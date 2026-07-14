@@ -46,6 +46,12 @@ ContextBinder v2 の目的は、よく使う「作業の入口」をひとつの
 - 下部に操作説明、ステータス表示、アイコン凡例を置く。
 - 成功通知はステータス表示、確認や失敗は MessageBox を使う。
 - 猫アイコンを使用し、作者製ツールであることが分かる見た目にする。
+- 固定UIは Visual Studio Designer で編集できる構成を優先する。
+- `UiLayoutSettings.cs` は動的生成UIや実行時補助に限定し、固定UIの主な調整場所にはしない。
+- MainFormには上部メニューバーを追加できる構成にする。
+- 操作ボタンは、初心者向けの文字つき表示と、コンパクトなアイコン中心表示を切り替えられるようにする。
+- コンパクト表示では ToolTip とホバー説明を使い、操作意味が分かるようにする。
+- 画像/動画は将来的にサムネイル表示へ対応する。まず画像サムネイルを優先し、動画サムネイルは段階的に実装する。
 
 ### 2.2 操作方針
 
@@ -110,9 +116,18 @@ ContextBinder_v2/
 将来的に以下を検討する。
 
 - インストーラー版
-- スタートメニュー登録
-- Windows起動時自動起動
 - アンインストール対応
+
+準MVPとして、インストーラーなしのZIP配布でも利用しやすくするため、以下を設定画面で優先対応する。
+
+- スタートメニュー登録 / 登録解除
+- Windows起動時自動起動 / 自動起動解除
+- 起動時最小化、またはタスクトレイ格納での起動
+- アプリ本体の場所が変わった場合のショートカット修復
+
+これらは管理者権限を要求しないユーザー単位ショートカットを基本とする。
+レジストリRunキーやタスクスケジューラは第一候補にしない。
+ZIP配布ではアプリ本体の場所が移動される可能性があるため、アプリ内から登録、解除、修復できる導線を用意する。
 
 ---
 
@@ -329,11 +344,22 @@ ContextBinderへようこそ
 ### 8.1 基本構成
 
 ```text
+上：メニューバー
 左：グループ一覧
 中央：項目一覧
 右：操作ボタン
 下：説明文 / ステータス / アイコン凡例
 ```
+
+上部メニューバーは `MenuStrip` を使用する。
+メニュー構成の候補は以下。
+
+- ファイル
+- 登録
+- 編集
+- 表示
+- ツール
+- ヘルプ
 
 ### 8.2 レイアウト案
 
@@ -371,6 +397,97 @@ ContextBinderへようこそ
 
 検索が全体検索モードの場合、グループ列を一時表示してもよい。
 
+### 8.3.1 項目の並び替えと表示用ソート
+
+項目一覧の並び順は、以下の3層に分けて扱う。
+
+| 種類 | 内容 |
+|---|---|
+| 保存済み手動並び順 | ユーザーが明示的に「並び順を保存」した正式な並び |
+| 編集中の手動並び順 | 右ドラッグ、上下移動、選択範囲ソートで変更中の未保存の並び |
+| 表示用ソート | 名前順、種類順、追加順、更新順など、一時的な見え方 |
+
+名前順、種類順、追加順、更新順へ切り替えても、保存済み手動並び順は破壊しない。
+手動並び順へ戻した場合は、最後に保存した手動並び順へ戻る。
+
+#### 並び替えUI
+
+MainFormには、次の操作を置く。
+
+```text
+並び方：[手動並び順 ▼]
+
+[↑ 上へ]
+[↓ 下へ]
+[並び順を保存]
+[保存前に戻す]
+
+● 並び順に未保存の変更があります
+```
+
+`● 並び順に未保存の変更があります` は、未保存の変更がある時だけ表示する。
+変更がない時は非表示にする。
+
+#### 右ドラッグ並び替え
+
+項目の手動並び替えは、誤操作を避けるため既定では右ボタンドラッグで行う。
+
+| 操作 | 挙動 |
+|---|---|
+| 右クリックして動かさず離す | 右クリックメニューを表示 |
+| 右ボタンを押したままドラッグ | 項目の手動並び替え、またはグループへのコピー/移動 |
+| 左ドラッグで外部から中央一覧へドロップ | 新規登録 |
+| 左ドラッグで項目を外部へ出す | 外部アプリへファイル/URL/本文を渡す |
+
+右クリックと右ドラッグは、Windowsのドラッグ開始距離を超えた場合だけドラッグ扱いにする。
+タッチパッド利用者のため、上へ/下へボタンは常に残す。
+
+#### 保存と復元
+
+D&Dや上下ボタンで並び替えても、すぐに `SortOrder` を正式保存しない。
+変更は編集中の手動並び順として保持する。
+
+- `並び順を保存`: 編集中の並び順を保存済み手動並び順として確定する
+- `保存前に戻す`: 編集中の並び順を破棄し、最後に保存した手動並び順へ戻す
+
+名前順などの表示用ソート中に右ドラッグや上下移動を行った場合は、その時点の表示順を編集中の手動並び順へコピーし、未保存状態にする。
+`この表示順を手動編集` のような別ボタンは設けない。
+
+#### 未保存確認
+
+並び順に未保存の変更があり、その変更が失われる可能性がある操作では、既定で確認を表示する。
+
+対象例：
+
+- アプリ終了
+- 保存内容の再読み込み
+- インポートによる置き換え
+- 対象グループの削除
+- 初期化
+
+確認文の例：
+
+```text
+並び順に保存していない変更があります。
+
+[保存して続ける]
+[変更を破棄して続ける]
+[キャンセル]
+
+□ 次回からこの選択を自動的に適用する
+```
+
+「次回からこの選択を自動的に適用する」を選んだ場合は、SettingsFormの詳細設定から戻せるようにする。
+既定値は「毎回確認する」。
+
+#### 選択範囲だけ並び替え
+
+複数選択した項目だけを、名前順、種類順、追加順、更新順などで並び替えられるようにする。
+選択範囲ソートの結果も、まず編集中の手動並び順へ反映する。
+正式保存は `並び順を保存` を押した時だけ行う。
+
+---
+
 ### 8.4 右側ボタン
 
 主要操作は右側ボタンに配置する。
@@ -389,6 +506,16 @@ ContextBinderへようこそ
 - 削除
 
 削除ボタンは危険操作として目立つ色にしてよい。
+
+操作ボタン表示モードを用意する。
+
+| モード | 内容 | 用途 |
+|---|---|---|
+| BeginnerText | 文字つきボタン | 初期値。初心者向け |
+| CompactIcon | アイコンボタン中心 | 省スペース。ToolTip/ホバー説明を使う |
+| TextAndIcon | アイコン＋文字 | 将来候補 |
+
+設定画面で切り替えられるようにする。
 
 ### 8.5 下部説明
 
@@ -411,6 +538,28 @@ ContextBinderへようこそ
 - 項目を追加しました
 - 既に登録されている項目を表示しました
 - 2件をスキップしました
+
+### 8.7 サムネイル表示
+
+画像/動画項目は、将来的にサムネイル表示へ対応する。
+
+候補モード。
+
+```csharp
+public enum ItemVisualMode
+{
+    List,
+    ThumbnailList,
+    LargeThumbnail
+}
+```
+
+初期実装では画像サムネイルを優先する。
+動画サムネイルは次段階とし、Windows Shellサムネイルの利用を優先する。
+FFmpeg同梱はライセンス、配布サイズ、速度への影響があるため慎重に判断する。
+
+サムネイル読み込みに失敗した場合は、通常の種類アイコンへフォールバックする。
+大量の画像でUIが固まらないよう、キャッシュや非同期読み込みを検討する。
 
 ---
 
@@ -576,6 +725,25 @@ public sealed class BinderItem
 ### 12.4 AppSettings
 
 ```csharp
+public enum ManualReorderInputMode
+{
+    RightDragOnly,
+    LeftOrRightDrag
+}
+
+public enum UnsavedOrderBehavior
+{
+    Ask,
+    AutoSave,
+    Discard
+}
+
+public enum TrashRetentionMode
+{
+    AutoDeleteAfterDays,
+    ManualOnly
+}
+
 public sealed class AppSettings
 {
     public bool FirstRunCompleted { get; set; } = false;
@@ -590,25 +758,41 @@ public sealed class AppSettings
     public bool ConfirmGroupDropCopyMove { get; set; } = true;
 
     public bool EnableItemDragReorder { get; set; } = true;
+    public ManualReorderInputMode ManualReorderInputMode { get; set; } = ManualReorderInputMode.RightDragOnly;
+    public UnsavedOrderBehavior UnsavedOrderBehavior { get; set; } = UnsavedOrderBehavior.Ask;
 
     public bool EnableExternalFileDropOut { get; set; } = true;
     public bool EnableExternalUrlTextDragOut { get; set; } = true;
     public bool EnableExternalTemplateTextDragOut { get; set; } = true;
 
     public bool CloseButtonMinimizesToTray { get; set; } = true;
+    public bool StartMinimizedToTray { get; set; } = false;
+    public bool AutoStartWithWindows { get; set; } = false;
     public bool EnableContextMenuDetails { get; set; } = true;
     public bool ShowBeginnerHints { get; set; } = true;
+    public bool ShowIconLegend { get; set; } = true;
 
     public bool AutoBackupEnabled { get; set; } = true;
     public int MaxBackupCount { get; set; } = 20;
 
     public bool ConfirmBeforeDelete { get; set; } = true;
     public bool MoveDeletedItemsToTrash { get; set; } = true;
+    public TrashRetentionMode TrashRetentionMode { get; set; } = TrashRetentionMode.AutoDeleteAfterDays;
+    public int TrashRetentionDays { get; set; } = 30;
+    public DateTimeOffset? LastTrashExpirationCheckAt { get; set; }
 
     public SearchScope DefaultSearchScope { get; set; } = SearchScope.CurrentGroup;
     public bool SearchTemplateBody { get; set; } = true;
+    public BinderItemType? DefaultTypeFilter { get; set; } = null;
+
+    public ItemSortMode DefaultItemSortMode { get; set; } = ItemSortMode.Manual;
 }
 ```
+
+`TrashRetentionDays` は、設定画面では1日以上の値に制限する。
+初期値は30日とする。
+
+---
 
 ### 12.5 SearchScope
 
@@ -620,7 +804,37 @@ public enum SearchScope
 }
 ```
 
-### 12.6 DeletedItemRecord
+### 12.6 ItemSortMode
+
+```csharp
+public enum ItemSortMode
+{
+    Manual,
+    Name,
+    Type,
+    CreatedAt,
+    UpdatedAt
+}
+```
+
+### 12.7 BinderItem.SortOrder
+
+既に `SortOrder` または類似の手動並び順フィールドがある場合はそれを使う。
+なければ `BinderItem` に以下を追加する。
+
+```csharp
+public int SortOrder { get; set; }
+```
+
+意味。
+
+- Manual並び順で使う。
+- 自動ソート時には破壊しない。
+- ユーザーがD&D、上下移動、現在順を保存した時に更新する。
+
+### 12.8 DeletedItemRecord
+
+登録のごみ箱に入った項目は、元グループ情報と削除日時を持つ。
 
 ```csharp
 public sealed class DeletedItemRecord
@@ -629,12 +843,16 @@ public sealed class DeletedItemRecord
     public string OriginalGroupId { get; set; } = "";
     public string OriginalGroupName { get; set; } = "";
     public BinderItem Item { get; set; } = new();
-    public DateTime DeletedAt { get; set; } = DateTime.Now;
-    public string DeleteReason { get; set; } = "";
+
+    public DateTimeOffset DeletedAt { get; set; } = DateTimeOffset.UtcNow;
 }
 ```
 
+日時は内部的にはUTC基準で保持する。
+表示時はローカル時刻へ変換する。
+
 ---
+
 
 ## 13. 登録操作
 
@@ -758,13 +976,17 @@ ContextBinder.ItemRefs.v2
 
 外部からのドロップは新規登録として扱う。
 
-内部項目が同じグループ内の中央一覧へドロップされた場合、並び替えとして扱う。
+```text
+ファイル / フォルダ / URL / 選択テキスト
+→ 現在選択中のグループへ追加
+```
 
-条件。
+内部項目の並び替えは、既定では右ボタンドラッグで行う。
+左ドラッグは、外部D&Dや外部アプリへの受け渡しと衝突しやすいため、初期設定では手動並び替えに使わない。
 
-- `ContextBinder.ItemRefs.v2` がある
-- `sourceGroupId == currentGroup.Id`
-- `EnableItemDragReorder == true`
+設定で `LeftOrRightDrag` を選んだ場合のみ、左ドラッグでも内部並び替えを許可する。
+
+---
 
 ### 15.4 左グループ一覧へドロップ
 
@@ -1030,8 +1252,8 @@ Templateは常に正常扱いとする。
 例。
 
 ```text
-選択した5件を削除します。
-この操作は元に戻せますが、完全削除すると戻せません。
+選択した5件の登録を、ContextBinderのごみ箱へ移動します。
+元のファイル、フォルダー、画像、動画は削除されません。
 ```
 
 ### 22.2 Undo
@@ -1045,38 +1267,109 @@ Templateは常に正常扱いとする。
 - 項目移動
 - 項目並び替え
 
-### 22.3 アプリ内ごみ箱
+### 22.3 登録のごみ箱
 
-ごみ箱はWindowsのごみ箱ではなく、ContextBinder内のごみ箱とする。
+ContextBinder v2 のごみ箱は、Windowsのごみ箱ではなく、アプリ内の「登録のごみ箱」として扱う。
 
-理由。
-
-- 削除するのは実ファイルではなく、登録情報である。
-- OSのごみ箱へ入れると意味がズレる。
-
-### 22.4 ごみ箱仕様
+重要な説明：
 
 ```text
-項目削除 → アプリ内ごみ箱へ移動
-ごみ箱から復元 → 元グループへ戻す
-元グループがない場合 → 未分類へ戻す
-完全削除 → ごみ箱から削除
+ここで削除されるのは、ContextBinderへの登録情報だけです。
+元のファイル、フォルダー、画像、動画は削除されません。
 ```
 
-### 22.5 グループ削除時
+この説明は、削除確認、ごみ箱画面上部、設定画面、ごみ箱を空にする確認で表示する。
 
-グループ削除時は中の項目の扱いを選べる。
+### 22.4 表記ルール
+
+実ファイル削除と誤認されないよう、UI文言は次を優先する。
+
+| 避けたい表記 | 推奨表記 |
+|---|---|
+| 削除 | 登録をごみ箱へ |
+| 復元 | 登録を元に戻す |
+| 完全削除 | ごみ箱から登録を削除 |
+| ごみ箱を空にする | ごみ箱内の登録情報をすべて削除 |
+
+削除確認の例：
+
+```text
+選択した3件の登録を、ContextBinderの登録のごみ箱へ移動します。
+
+元のファイルやフォルダーは削除されません。
+
+[登録をごみ箱へ]
+[キャンセル]
+```
+
+ContextBinder v2 は、元ファイルそのものを削除する機能を持たない。
+
+### 22.5 保持期限
+
+登録のごみ箱は、次の保持モードを持つ。
+
+| モード | 内容 |
+|---|---|
+| 指定日数後に自動削除 | `DeletedAt` から指定日数を過ぎた登録情報を削除する |
+| 手動でのみ削除 | ユーザーが削除するまで保持する |
+
+初期値：
+
+```text
+モード：指定日数後に自動削除
+保持日数：30日
+```
+
+期限切れチェックは次のタイミングで行う。
+
+- ContextBinder起動時
+- 起動中は1日1回
+
+ContextBinderを起動していない間は削除処理は走らない。
+起動後のチェックで期限切れ登録があれば、ごみ箱から登録情報だけを削除する。
+元のファイル、フォルダー、画像、動画は削除しない。
+
+期限切れ削除が行われた場合は、ステータス表示で通知する。
+
+```text
+期限を過ぎた登録3件を、ごみ箱から自動削除しました。元のファイルは削除されていません。
+```
+
+長時間起動し続ける場合も、1日1回だけ確認すればよい。
+毎分チェックなどは行わない。
+
+### 22.6 復元
+
+登録をごみ箱から復元する場合：
+
+```text
+元グループが存在する
+→ 元グループへ復元
+
+元グループが削除済み
+→ 未分類へ復元
+```
+
+一度復元した登録を再度ごみ箱へ入れる場合は、その時点で `DeletedAt` を更新する。
+過去の削除日時は引き継がない。
+
+### 22.7 グループ削除時
+
+グループ削除時は、登録情報がどうなるかを明確にする。
 
 ```text
 グループ「○○」を削除します。
 
-中の項目をどうしますか？
+中の登録をどうしますか？
 [未分類へ移動]
-[ごみ箱へ移動]
+[登録のごみ箱へ移動]
 [キャンセル]
+
+元のファイルやフォルダーは削除されません。
 ```
 
 ---
+
 
 ## 23. バックアップ
 
@@ -1160,6 +1453,9 @@ ContextBinder_Data\backups\
 - 種類表示：アイコン＋文字 / アイコンのみ / 文字のみ / 非表示
 - アイコン凡例を表示
 - 初心者向け説明を表示
+- 操作ボタン表示モード：初心者向け / コンパクト
+- 項目表示モード：通常一覧 / サムネイル一覧 / 大きめサムネイル
+- サムネイルサイズ
 
 ### 25.2 D&D
 
@@ -1185,16 +1481,44 @@ ContextBinder_Data\backups\
 
 ### 25.5 削除と復元
 
-- 削除前に確認する
-- 削除した項目をごみ箱へ移動する
-- ごみ箱を開く
-- ごみ箱を空にする
+```text
+削除と復元
+
+削除した登録：
+○ 30日後に自動削除する
+○ 自動削除せず、手動でのみ削除する
+
+保存日数：[ 30 ] 日
+
+※削除されるのはContextBinderへの登録情報だけです。
+  元のファイル、フォルダー、画像、動画は削除されません。
+```
+
+自動削除OFF時は、保存日数入力を無効化する。
+
+---
 
 ### 25.6 常駐
 
 - 閉じるボタンでタスクトレイに格納する
 - 起動時に最小化
-- Windows起動時に自動起動（将来候補）
+- Windows起動時に自動起動
+- Windows起動時自動起動を解除する
+- スタートメニューに登録する
+- スタートメニュー登録を解除する
+- スタートメニュー / 自動起動ショートカットを修復する
+
+スタートメニュー登録とWindows起動時自動起動は準MVP対象とする。
+実装時は、UIから直接ショートカットを操作せず、`ShortcutService` または `StartupRegistrationService` のようなServiceへ分離する。
+保存先はユーザー単位のStart Menu Programs配下、およびStartupフォルダを基本とする。
+AppSettingsには必要に応じて以下を追加する。
+
+- `RegisterStartMenuShortcut`
+- `AutoStartWithWindows`
+- `StartMinimizedToTray`
+- `LastShortcutTargetPath`
+
+ただし、実際のショートカット有無と settings.json の値がずれる可能性があるため、起動時または設定画面表示時に実ファイル状態も確認する。
 
 ---
 
@@ -1373,8 +1697,65 @@ ContextBinder/
 | ClipboardService | クリップボード操作 |
 | SearchService | 検索/絞り込み |
 | TrashService | ごみ箱/削除履歴 |
+| ItemOrderingService | 手動並び順の正規化、上へ移動、下へ移動、D&D並び替え、現在順の保存 |
+| ItemSortService | SortModeに応じた表示順作成、選択範囲内ソート |
+
+### 32.2 項目並び替えService方針
+
+MainFormに並び替え処理を直書きしない。
+
+候補：
+
+- `ItemOrderingService`
+- `ItemSortService`
+
+責務：
+
+- 保存済み手動並び順の正規化
+- 編集中の手動並び順の作成と保持
+- 右ドラッグD&D並び替え
+- 上へ移動
+- 下へ移動
+- 保存前に戻す
+- 並び順を保存
+- 一つ前の保存済み手動並び順への復元
+- 表示用ソートの作成
+- 表示用ソート中に手動変更した場合のドラフト化
+- 選択範囲内ソート
+- 未保存確認の要否判定
+
+### 32.3 追加テスト候補
+
+並び替え：
+
+- Manual順で表示される
+- Name順へ切り替えてもSortOrderは壊れない
+- Type順へ切り替えてもSortOrderは壊れない
+- 手動並び順へ戻すと保存済み手動順に戻る
+- 右ドラッグ後は未保存状態になる
+- 上へ移動で編集中の手動並び順が更新される
+- 下へ移動で編集中の手動並び順が更新される
+- 並び順を保存するとSortOrderが更新される
+- 保存前に戻すと最後に保存した手動順へ戻る
+- 未保存変更がない時は未保存表示が出ない
+- 未保存変更がある時だけ未保存表示が出る
+- 未保存確認で「次回から自動適用」を選ぶと設定へ保存される
+- 選択範囲だけ名前順にできる
+- 選択外の項目位置が不必要に崩れない
+
+登録のごみ箱：
+
+- 登録のごみ箱へ移動しても元ファイルは削除されない
+- DeletedAtが保存される
+- 30日を過ぎた登録情報だけ自動削除される
+- 手動削除のみ設定では期限切れ削除されない
+- 起動時チェックで期限切れ登録が削除される
+- 起動中1日1回チェックで期限切れ登録が削除される
+- 1日以内に同じ期限チェックが繰り返し走らない
+- 復元時に元グループがなければ未分類へ戻る
 
 ---
+
 
 ## 33. MVP範囲
 
@@ -1454,5 +1835,4 @@ ContextBinderは参照先を管理するツールであり、実ファイルの�
 - キーボードショートカット
 - URL生存チェック
 - グローバルホットキー
-- Windows自動起動
 - インストーラー版
