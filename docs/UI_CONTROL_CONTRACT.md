@@ -6,14 +6,98 @@
 - Codexは `Name` 契約に従って処理を接続する
 - 同じ機能に、文字ボタン・アイコンボタン・MenuStripなど複数の入口を置いてよい
 - 複数の入口は、内部では同じPresenter処理を呼ぶ
+- 英語の `Name` は内部名であり、画面表示は日本語で自由に決める
 
 画面全体の考え方は [`UI_SCREEN_MAP.md`](UI_SCREEN_MAP.md) を参照してください。
 
 ---
 
-## 1. 基本ルール
+# 1. `Name` の読み方
 
-### 少佐が自由に変更してよいもの
+英語名は、基本的に次の組み合わせです。
+
+```text
+動作 + 対象 + 部品種類
+```
+
+例：
+
+```text
+addGroupIconButton
+```
+
+を分けると、
+
+```text
+add       = 追加する
+group     = グループ
+IconButton = アイコンボタン
+```
+
+つまり「グループ追加用のアイコンボタン」です。
+
+## 1.1 よく使う動作名
+
+| 英語 | 日本語 |
+|---|---|
+| `add` | 追加する |
+| `open` | 開く |
+| `copy` | コピーする |
+| `edit` | 編集する |
+| `detail` | 詳細を表示する |
+| `delete` | 登録をごみ箱へ移動する |
+| `search` | 検索する |
+| `clear` | 解除・クリアする |
+| `moveUp` | 上へ移動する |
+| `moveDown` | 下へ移動する |
+| `save` | 保存する |
+| `revert` | 保存前へ戻す |
+| `restore` | 元に戻す |
+| `import` | 登録内容を読み込む |
+| `export` | 登録内容を書き出す |
+| `show` | 表示する |
+| `hide` | 非表示にする |
+| `repair` | 修復する |
+
+## 1.2 よく使う対象名
+
+| 英語 | 日本語 |
+|---|---|
+| `group` | グループ |
+| `item` | 登録項目 |
+| `file` | ファイル |
+| `folder` | フォルダー |
+| `url` | URL |
+| `template` | テンプレート文 |
+| `order` | 並び順 |
+| `trash` | 登録のごみ箱 |
+| `backup` | バックアップ |
+| `settings` | 設定 |
+| `thumbnail` | サムネイル |
+| `status` | 状態・操作結果 |
+
+## 1.3 よく使う部品種類
+
+| 英語 | 日本語 |
+|---|---|
+| `Button` | 文字つきボタン |
+| `IconButton` | アイコンボタン |
+| `ToolStripButton` | ToolStrip内のアイコンボタン |
+| `ToolStripMenuItem` | MenuStripや右クリック内のメニュー項目 |
+| `Panel` | 部品をまとめる領域 |
+| `Label` | 文字表示 |
+| `TextBox` | 文字入力欄 |
+| `ComboBox` | 選択肢を開く欄 |
+| `ListBox` | 単純な一覧 |
+| `GridView` | 表形式の一覧 |
+| `CheckBox` | ON/OFF選択 |
+| `RadioButton` | どれか1つを選択 |
+
+---
+
+# 2. 基本ルール
+
+## 2.1 少佐が自由に変更してよいもの
 
 - `Text`
 - `Size`
@@ -28,7 +112,7 @@
 - コントロールを置く場所
 - 固定の説明文
 
-### 変更するときに注意するもの
+## 2.2 変更するときに注意するもの
 
 | 項目 | 理由 |
 |---|---|
@@ -39,7 +123,7 @@
 
 `Name` を変更したい場合は、この文書と機能接続を同時に更新します。
 
-### Codexが守ること
+## 2.3 Codexが守ること
 
 - Designerで作ったレイアウトを勝手に作り直さない
 - `Text / Size / Location / Margin / Padding / Dock / Anchor` を不用意に上書きしない
@@ -51,17 +135,15 @@
 
 ---
 
-# 2. 同じ機能に複数の入口を置くルール
+# 3. 同じ機能に複数の入口を置くルール
 
-同じ機能に、次の入口を置けます。
-
-| 種類 | 命名規則 | 例 |
-|---|---|---|
-| 初心者向け文字ボタン | `<action>Button` | `addGroupButton` |
-| コンパクトアイコンボタン | `<action>IconButton` | `addGroupIconButton` |
-| ToolStripのアイコン | `<action>ToolStripButton` | `saveManualOrderToolStripButton` |
-| MenuStrip | `<action>ToolStripMenuItem` | `addGroupToolStripMenuItem` |
-| 右クリックメニュー | 用途が分かる名前 | `openContainingFolderToolStripMenuItem` |
+| 入口の種類 | 命名規則 | 例 | 日本語での意味 |
+|---|---|---|---|
+| 初心者向け文字ボタン | `<action>Button` | `addGroupButton` | グループ追加の文字ボタン |
+| コンパクトアイコンボタン | `<action>IconButton` | `addGroupIconButton` | グループ追加の＋アイコン |
+| ToolStrip内アイコン | `<action>ToolStripButton` | `saveManualOrderToolStripButton` | ToolStrip内の並び順保存 |
+| MenuStrip項目 | `<action>ToolStripMenuItem` | `addGroupToolStripMenuItem` | メニュー内のグループ追加 |
+| 右クリック項目 | 用途が分かる名前 | `openContainingFolderToolStripMenuItem` | 置いてあるフォルダーを開く |
 
 例：グループ追加
 
@@ -70,10 +152,10 @@ addGroupButton
 addGroupIconButton
 addGroupToolStripMenuItem
     ↓
-同じ AddGroupRequested 処理
+同じ「グループ追加」処理
 ```
 
-Codex側の接続イメージ：
+Codex側では、すべて同じ処理へ接続します。
 
 ```csharp
 addGroupButton.Click += AddGroupRequested;
@@ -85,7 +167,7 @@ addGroupToolStripMenuItem.Click += AddGroupRequested;
 
 ---
 
-# 3. 表示モード契約
+# 4. 表示モード契約
 
 候補設定名：
 
@@ -97,20 +179,22 @@ public enum ActionButtonDisplayMode
 }
 ```
 
-## BeginnerText
+## 4.1 `BeginnerText`：初心者向け文字表示
 
 - 文字つきボタンを表示する
 - コンパクトアイコンボタンは非表示にする
-- MenuStripは表示したまま
+- `MenuStrip` は表示したまま
 
-## CompactIcon
+## 4.2 `CompactIcon`：コンパクトアイコン表示
 
 - 文字つきボタンを非表示にする
 - コンパクトアイコンボタンを表示する
-- MenuStripは表示したまま
-- 各アイコンへToolTipとAccessibleNameを設定する
+- アイコン自体は常に表示する
+- マウスを乗せた時だけToolTipや説明文を表示する
+- `MenuStrip` は表示したまま
+- 各アイコンへ `ToolTip` と `AccessibleName` を設定する
 
-## 配置について
+## 4.3 配置について
 
 コンパクトアイコンは一つのPanelへまとめる必要はありません。
 
@@ -125,83 +209,111 @@ public enum ActionButtonDisplayMode
 
 ---
 
-# 4. 共通コンポーネント
+# 5. 配置用コンテナ契約
 
-| Name | 種類 | 用途 |
-|---|---|---|
-| `mainMenuStrip` | `MenuStrip` | 上部メニューバー |
-| `groupListBox` | `ListBox` | グループ一覧 |
-| `itemGridView` | `DataGridView` | 選択グループの項目一覧 |
-| `statusLabel` | `Label` | 操作結果、保存状態、エラー概要 |
-| `actionToolTip` | `ToolTip` | アイコンボタンの説明 |
-| `actionHoverDescriptionLabel` | `Label` | ホバー中の操作説明。任意 |
+配置用コンテナは、処理そのものではなく、部品をまとめる箱です。
 
-配置用コンテナの候補：
+## 5.1 推奨する大きなコンテナ
 
-| Name | 種類 | 用途 | 必須 |
+| `Name` | 日本語での意味 | 種類候補 | 役割 | 参考Dock | 必須度 |
+|---|---|---|---|---|---|
+| `mainSplitContainer` | 左右分割の大枠 | `SplitContainer` | 左をグループ、右を項目・操作に分ける | `Fill` | 推奨 |
+| `groupAreaPanel` | グループ領域全体 | `Panel` | 見出しとグループ一覧をまとめる | `Fill` | 推奨 |
+| `groupHeaderPanel` | グループ見出し領域 | `Panel` / `TableLayoutPanel` | 「グループ」と＋ボタンを置く | `Top` | 推奨 |
+| `workAreaPanel` | 右側作業領域全体 | `Panel` | 項目領域と初心者向け操作をまとめる | `Fill` | 推奨 |
+| `beginnerActionPanel` | 初心者向け文字操作領域 | `Panel` / `FlowLayoutPanel` | 文字つき操作ボタンをまとめる | `Right`参考 | 推奨 |
+| `itemAreaPanel` | 項目一覧側の領域 | `Panel` | 検索、一覧、並び替え、下部情報をまとめる | `Fill` | 推奨 |
+| `searchAndViewPanel` | 検索・表示操作領域 | `Panel` | 検索、種類、並び方、表示方法 | `Top` | 推奨 |
+| `itemToolbarPanel` | 項目操作ツール領域 | `Panel` / `FlowLayoutPanel` / `ToolStrip` | 追加、開く、コピー、編集、並び替え | `Top` | 推奨 |
+| `bottomInformationPanel` | 下部情報領域 | `Panel` | ステータス、ヒント、アイコン説明 | `Bottom` | 推奨 |
+
+`bottomInformationPanel` は `itemAreaPanel` 内へ置く参考案です。中央の下だけに表示でき、左のグループ領域や右の初心者操作領域へ干渉しません。
+
+## 5.2 コンパクト操作をまとめる小さなコンテナ
+
+| `Name` | 日本語での意味 | 中へ置く例 | 必須度 |
 |---|---|---|---|
-| `groupHeaderPanel` | `Panel` | グループ見出しと操作を置く | 任意 |
-| `itemHeaderPanel` | `Panel` | 項目見出しと操作を置く | 任意 |
-| `beginnerActionPanel` | `Panel` / `FlowLayoutPanel` | 文字ボタンをまとめる | 任意 |
-| `compactActionPanel` | `Panel` / `FlowLayoutPanel` | アイコンをまとめる場合 | 任意 |
-| `compactActionToolStrip` | `ToolStrip` | ToolStrip形式のアイコン操作 | 任意 |
-| `orderActionPanel` | `Panel` | 並び替え操作をまとめる | 任意 |
+| `groupCompactActionPanel` | グループ用アイコン領域 | `addGroupIconButton` | 任意 |
+| `itemCompactActionPanel` | 項目操作アイコン領域 | 追加、開く、コピー、編集、ごみ箱 | 任意 |
+| `orderCompactActionPanel` | 並び替えアイコン領域 | 上、下、保存、保存前に戻す | 任意 |
 
-コンテナの有無や配置は機能契約ではありません。
+これらがなくても、アイコンボタンを `groupHeaderPanel` や `itemToolbarPanel` に直接置けます。
 
 ---
 
-# 5. 基本操作の入口契約
+# 6. 共通コンポーネント
 
-## 5.1 登録
-
-| 機能 | 文字ボタン | アイコンボタン | MenuStrip |
-|---|---|---|---|
-| グループ追加 | `addGroupButton` | `addGroupIconButton` | `addGroupToolStripMenuItem` |
-| ファイル追加 | `addFileButton` | `addFileIconButton` | `addFileToolStripMenuItem` |
-| フォルダー追加 | `addFolderButton` | `addFolderIconButton` | `addFolderToolStripMenuItem` |
-| URL追加 | `addUrlButton` | `addUrlIconButton` | `addUrlToolStripMenuItem` |
-| テンプレート追加 | `addTemplateButton` | `addTemplateIconButton` | `addTemplateToolStripMenuItem` |
-
-## 5.2 選択項目の操作
-
-| 機能 | 文字ボタン | アイコンボタン | MenuStrip |
-|---|---|---|---|
-| 開く | `openButton` | `openIconButton` | `openSelectedToolStripMenuItem` |
-| コピー | `copyButton` | `copyIconButton` | `copySelectedToolStripMenuItem` |
-| 編集 | `editButton` | `editIconButton` | `editSelectedToolStripMenuItem` |
-| 詳細 | `detailButton` | `detailIconButton` | `detailSelectedToolStripMenuItem` |
-| 登録をごみ箱へ | `deleteButton` | `deleteIconButton` | `deleteSelectedToolStripMenuItem` |
-
-`deleteButton` は既存接続との互換性のため `Name` を維持します。画面上の `Text` は「登録をごみ箱へ」など、元ファイルを消さないことが分かる文言にして構いません。
-
-## 5.3 ツール・管理
-
-| 機能 | 文字ボタン | アイコンボタン | MenuStrip |
-|---|---|---|---|
-| 設定 | `settingsButton` | `settingsIconButton` | `settingsToolStripMenuItem` |
-| 登録のごみ箱 | `trashButton` | `trashIconButton` | `trashToolStripMenuItem` |
-| 登録内容を読み込む | `importButton` | `importIconButton` | `importToolStripMenuItem` |
-| 登録内容を書き出す | `exportButton` | `exportIconButton` | `exportToolStripMenuItem` |
-| バックアップ | `backupButton` | `backupIconButton` | `backupToolStripMenuItem` |
-
-アイコン版が不要な機能は、少佐の判断で配置しなくて構いません。
+| `Name` | 日本語での意味 | 種類 | 機能 | 必須度 |
+|---|---|---|---|---|
+| `mainMenuStrip` | 上部メニューバー | `MenuStrip` | ファイル、登録、編集、表示、ツール、ヘルプ | 推奨 |
+| `groupListBox` | グループ一覧 | `ListBox` | グループを表示・選択する | 必須 |
+| `itemGridView` | 登録項目一覧 | `DataGridView` | 選択グループの項目を表形式で表示する | 必須 |
+| `statusLabel` | 操作結果表示 | `Label` | 保存、コピー、エラーなどを表示する | 必須 |
+| `actionToolTip` | アイコン説明 | `ToolTip` | アイコンへマウスを乗せた時に説明する | コンパクト表示で必須 |
+| `actionHoverDescriptionLabel` | ホバー説明欄 | `Label` | アイコンの詳しい説明を画面上に表示する | 任意 |
 
 ---
 
-# 6. 検索・絞り込み契約
+# 7. グループ領域の契約
 
-| Name | 種類 | 用途 |
-|---|---|---|
-| `searchTextBox` | `TextBox` | 検索キーワード |
-| `searchButton` | `Button` | 文字つき検索実行 |
-| `searchIconButton` | `Button` | アイコン検索実行。任意 |
-| `clearSearchButton` | `Button` | 文字つき検索解除 |
-| `clearSearchIconButton` | `Button` | アイコン検索解除。任意 |
-| `searchScopeComboBox` | `ComboBox` | 現在のグループ / 全体 |
-| `typeFilterComboBox` | `ComboBox` | 種類フィルター |
+| 画面上の意味 | `Name` | 種類 | 機能 | 表示例 | 必須度 |
+|---|---|---|---|---|---|
+| 「グループ」見出し | `groupTitleLabel` | `Label` | 領域名を表示する | グループ | 任意 |
+| グループ一覧 | `groupListBox` | `ListBox` | グループを表示・選択する | TRPG、動画編集 | 必須 |
+| グループ追加・文字 | `addGroupButton` | `Button` | 初心者向けグループ追加 | グループ追加 | 初心者表示で推奨 |
+| グループ追加・アイコン | `addGroupIconButton` | `Button` | コンパクト表示のグループ追加 | ＋ | コンパクト表示で推奨 |
+| グループ追加・メニュー | `addGroupToolStripMenuItem` | `ToolStripMenuItem` | メニューからグループ追加 | 登録 > グループ追加 | 推奨 |
 
-検索候補：
+`addGroupIconButton` の推奨補助：
+
+```text
+ToolTip：グループ追加
+AccessibleName：グループ追加
+AccessibleDescription：新しいグループを作成します
+```
+
+---
+
+# 8. 項目追加の入口契約
+
+| 機能 | 日本語での意味 | 文字ボタン | アイコンボタン | MenuStrip |
+|---|---|---|---|---|
+| ファイル追加 | ファイルを現在のグループへ登録する | `addFileButton` | `addFileIconButton` | `addFileToolStripMenuItem` |
+| フォルダー追加 | フォルダーを登録する | `addFolderButton` | `addFolderIconButton` | `addFolderToolStripMenuItem` |
+| URL追加 | URLを登録する | `addUrlButton` | `addUrlIconButton` | `addUrlToolStripMenuItem` |
+| テンプレート追加 | 定型文を登録する | `addTemplateButton` | `addTemplateIconButton` | `addTemplateToolStripMenuItem` |
+
+アイコン例は固定ではありません。少佐が分かりやすい絵へ変更できます。
+
+---
+
+# 9. 選択項目の操作契約
+
+| 機能 | 日本語での意味 | 文字ボタン | アイコンボタン | MenuStrip |
+|---|---|---|---|---|
+| 開く | ファイル、フォルダー、URLを開く | `openButton` | `openIconButton` | `openSelectedToolStripMenuItem` |
+| コピー | パス、URL、本文をコピーする | `copyButton` | `copyIconButton` | `copySelectedToolStripMenuItem` |
+| 編集 | タイトルや参照先を変更する | `editButton` | `editIconButton` | `editSelectedToolStripMenuItem` |
+| 詳細 | 登録内容を変更せず確認する | `detailButton` | `detailIconButton` | `detailSelectedToolStripMenuItem` |
+| 登録をごみ箱へ | ContextBinderの登録情報だけをごみ箱へ移す | `deleteButton` | `deleteIconButton` | `deleteSelectedToolStripMenuItem` |
+
+`deleteButton` は既存接続との互換性のため `Name` を維持します。画面上の `Text` は「登録をごみ箱へ」など、元ファイルを消さないと分かる文言にします。
+
+---
+
+# 10. 検索・絞り込み契約
+
+| 画面上の意味 | `Name` | 種類 | 機能 | 必須度 |
+|---|---|---|---|---|
+| 検索キーワード | `searchTextBox` | `TextBox` | タイトル、パス、URL、本文などを入力する | 推奨 |
+| 検索実行・文字 | `searchButton` | `Button` | 検索を実行する | 任意 |
+| 検索実行・アイコン | `searchIconButton` | `Button` | コンパクト表示で検索する | 任意 |
+| 検索解除・文字 | `clearSearchButton` | `Button` | 検索条件を消す | 推奨 |
+| 検索解除・アイコン | `clearSearchIconButton` | `Button` | コンパクト表示で検索解除する | 任意 |
+| 検索範囲 | `searchScopeComboBox` | `ComboBox` | 現在のグループ / 全体を選ぶ | 推奨 |
+| 種類絞り込み | `typeFilterComboBox` | `ComboBox` | フォルダー、画像、URLなどで絞る | 推奨 |
+
+種類候補：
 
 ```text
 すべて / フォルダー / ファイル / 画像 / 動画 / URL / テンプレート
@@ -209,29 +321,29 @@ public enum ActionButtonDisplayMode
 
 ---
 
-# 7. 並び替え・ソート契約
+# 11. 並び替え・ソート契約
 
-## 7.1 基本コントロール
+## 11.1 基本コントロール
 
-| 機能 | 文字ボタン | アイコンボタン | ToolStrip / MenuStrip |
-|---|---|---|---|
-| 上へ移動 | `moveUpButton` | `moveUpIconButton` | `moveUpToolStripButton` / `moveUpToolStripMenuItem` |
-| 下へ移動 | `moveDownButton` | `moveDownIconButton` | `moveDownToolStripButton` / `moveDownToolStripMenuItem` |
-| 並び順を保存 | `saveManualOrderButton` | `saveManualOrderIconButton` | `saveManualOrderToolStripButton` / `saveManualOrderToolStripMenuItem` |
-| 保存前に戻す | `revertUnsavedOrderButton` | `revertUnsavedOrderIconButton` | `revertUnsavedOrderToolStripButton` / `revertUnsavedOrderToolStripMenuItem` |
+| 機能 | 日本語での意味 | 文字ボタン | アイコンボタン | ToolStrip / MenuStrip |
+|---|---|---|---|---|
+| 上へ移動 | 選択項目を1段上へ移動する | `moveUpButton` | `moveUpIconButton` | `moveUpToolStripButton` / `moveUpToolStripMenuItem` |
+| 下へ移動 | 選択項目を1段下へ移動する | `moveDownButton` | `moveDownIconButton` | `moveDownToolStripButton` / `moveDownToolStripMenuItem` |
+| 並び順を保存 | 編集中の並び順を正式保存する | `saveManualOrderButton` | `saveManualOrderIconButton` | `saveManualOrderToolStripButton` / `saveManualOrderToolStripMenuItem` |
+| 保存前に戻す | 未保存変更を捨て、最後の保存順へ戻す | `revertUnsavedOrderButton` | `revertUnsavedOrderIconButton` | `revertUnsavedOrderToolStripButton` / `revertUnsavedOrderToolStripMenuItem` |
 
-共通：
+共通部品：
 
-| Name | 種類 | 用途 |
-|---|---|---|
-| `sortModeComboBox` | `ComboBox` | 手動 / 名前 / 種類 / 追加 / 更新順 |
-| `orderUnsavedStatusLabel` | `Label` | 未保存変更がある時だけ表示 |
-| `sortSelectedButton` | `Button` | 選択範囲だけ並び替え。任意 |
-| `sortSelectedModeComboBox` | `ComboBox` | 選択範囲ソート方式。任意 |
-| `restorePreviousManualOrderButton` | `Button` | 一つ前の保存順へ戻す。将来候補 |
-| `undoOrderMoveButton` | `Button` | 直前の移動を戻す。将来候補 |
+| 画面上の意味 | `Name` | 種類 | 機能 | 必須度 |
+|---|---|---|---|---|
+| 並び方選択 | `sortModeComboBox` | `ComboBox` | 手動、名前、種類、追加、更新順を選ぶ | 推奨 |
+| 未保存表示 | `orderUnsavedStatusLabel` | `Label` | 未保存変更がある時だけ表示する | 推奨 |
+| 選択範囲ソート | `sortSelectedButton` | `Button` | 選択項目だけ指定順で並べる | 任意 |
+| 選択範囲ソート方式 | `sortSelectedModeComboBox` | `ComboBox` | 名前順、種類順などを選ぶ | 任意 |
+| 前の保存順へ戻す | `restorePreviousManualOrderButton` | `Button` | 一つ前に保存した手動順へ戻す | 将来候補 |
+| 直前移動を戻す | `undoOrderMoveButton` | `Button` | 直前の並び替えだけ戻す | 将来候補 |
 
-## 7.2 状態ルール
+## 11.2 状態ルール
 
 - 右ドラッグ、上下移動、選択範囲ソートは編集状態へ反映する
 - 移動しただけでは `SortOrder` を正式保存しない
@@ -240,7 +352,7 @@ public enum ActionButtonDisplayMode
 - `orderUnsavedStatusLabel` は未保存変更がある時だけ表示する
 - 名前順などの表示用ソートは保存済み手動順を破壊しない
 
-## 7.3 未保存確認
+## 11.3 未保存確認
 
 設定候補：
 
@@ -253,6 +365,14 @@ public enum UnsavedOrderBehavior
 }
 ```
 
+日本語での意味：
+
+| 値 | 日本語 |
+|---|---|
+| `Ask` | 毎回確認する |
+| `AutoSave` | 自動的に保存する |
+| `Discard` | 自動的に破棄する |
+
 確認対象：
 
 - アプリ終了
@@ -261,125 +381,127 @@ public enum UnsavedOrderBehavior
 - 対象グループ削除
 - 初期化
 
-確認文例：
+---
 
-```text
-並び順に保存していない変更があります。
+# 12. 下部情報契約
 
-[保存して続ける]
-[変更を破棄して続ける]
-[キャンセル]
-
-□ 次回からこの選択を自動的に適用する
-```
+| 画面上の意味 | `Name` | 種類 | 機能 | 必須度 |
+|---|---|---|---|---|
+| 操作結果 | `statusLabel` | `Label` | コピー、保存、エラーなどを表示する | 必須 |
+| ヒント表示切替 | `showBeginnerHintsCheckBox` | `CheckBox` | 使い方のヒントを表示・非表示にする | 推奨 |
+| 使い方のヒント | `beginnerHintsGroupBox` | `GroupBox` | 初心者向け説明を表示する | 推奨 |
+| アイコン説明切替 | `showIconMeaningCheckBox` | `CheckBox` | アイコン説明を表示・非表示にする | 推奨 |
+| アイコンの意味 | `iconMeaningGroupBox` | `GroupBox` | 猫アイコン等の説明を表示する | 推奨 |
+| アイコン説明配置先 | `iconMeaningPanel` | `Panel` / `FlowLayoutPanel` | 種類別説明を並べる | 推奨 |
+| ホバー説明 | `actionHoverDescriptionLabel` | `Label` | アイコンにマウスを乗せた時の詳しい説明 | 任意 |
 
 ---
 
-# 8. MenuStrip契約
+# 13. MenuStrip契約
 
-## ファイル
+## 13.1 ファイル
 
-| Name | 用途 |
-|---|---|
-| `fileToolStripMenuItem` | ファイルメニュー |
-| `exportToolStripMenuItem` | 登録内容を書き出す |
-| `importToolStripMenuItem` | 登録内容を読み込む |
-| `exitToolStripMenuItem` | 終了 |
-
-## 登録
-
-| Name | 用途 |
-|---|---|
-| `registerToolStripMenuItem` | 登録メニュー |
-| `addGroupToolStripMenuItem` | グループ追加 |
-| `addFileToolStripMenuItem` | ファイル追加 |
-| `addFolderToolStripMenuItem` | フォルダー追加 |
-| `addUrlToolStripMenuItem` | URL追加 |
-| `addTemplateToolStripMenuItem` | テンプレート追加 |
-
-## 編集
-
-| Name | 用途 |
-|---|---|
-| `editToolStripMenuItem` | 編集メニュー |
-| `openSelectedToolStripMenuItem` | 開く |
-| `copySelectedToolStripMenuItem` | コピー |
-| `editSelectedToolStripMenuItem` | 編集 |
-| `detailSelectedToolStripMenuItem` | 詳細 |
-| `deleteSelectedToolStripMenuItem` | 登録をごみ箱へ |
-| `undoToolStripMenuItem` | 元に戻す |
-| `moveUpToolStripMenuItem` | 上へ移動 |
-| `moveDownToolStripMenuItem` | 下へ移動 |
-| `sortSelectedToolStripMenuItem` | 選択範囲ソート |
-| `saveManualOrderToolStripMenuItem` | 並び順を保存 |
-| `revertUnsavedOrderToolStripMenuItem` | 保存前に戻す |
-
-## 表示
-
-| Name | 用途 |
-|---|---|
-| `viewToolStripMenuItem` | 表示メニュー |
-| `showBeginnerHintsToolStripMenuItem` | 使い方のヒント |
-| `showIconMeaningToolStripMenuItem` | アイコンの意味 |
-| `actionButtonDisplayModeToolStripMenuItem` | 操作ボタン表示の親項目 |
-| `beginnerActionButtonsToolStripMenuItem` | 初心者向け文字表示 |
-| `compactIconButtonsToolStripMenuItem` | コンパクトアイコン表示 |
-| `showThumbnailsToolStripMenuItem` | サムネイル表示 |
-| `sortModeToolStripMenuItem` | 並び方の親項目 |
-| `manualOrderToolStripMenuItem` | 手動並び順 |
-| `sortByNameToolStripMenuItem` | 名前順 |
-| `sortByTypeToolStripMenuItem` | 種類順 |
-| `sortByCreatedAtToolStripMenuItem` | 追加順 |
-| `sortByUpdatedAtToolStripMenuItem` | 更新順 |
-
-## ツール・ヘルプ
-
-| Name | 用途 |
-|---|---|
-| `toolsToolStripMenuItem` | ツールメニュー |
-| `settingsToolStripMenuItem` | 設定 |
-| `trashToolStripMenuItem` | 登録のごみ箱 |
-| `backupToolStripMenuItem` | バックアップ |
-| `repairShortcutsToolStripMenuItem` | ショートカット修復 |
-| `helpToolStripMenuItem` | ヘルプメニュー |
-| `usageGuideToolStripMenuItem` | 使い方 |
-| `aboutToolStripMenuItem` | バージョン情報 |
-
----
-
-# 9. DataGridView列契約
-
-| Name | 種類の目安 | 用途 |
+| `Name` | 日本語表示例 | 機能 |
 |---|---|---|
-| `itemIconColumn` | `DataGridViewImageColumn` | 種類アイコン |
-| `itemTypeColumn` | `DataGridViewTextBoxColumn` | 種類文字 |
-| `itemTitleColumn` | `DataGridViewTextBoxColumn` | タイトル |
-| `itemReferenceColumn` | `DataGridViewTextBoxColumn` | パス、URL、テンプレート概要 |
-| `itemStatusColumn` | `DataGridViewTextBoxColumn` | 存在状態など |
-| `itemThumbnailColumn` | `DataGridViewImageColumn` | 画像・動画サムネイル |
+| `fileToolStripMenuItem` | ファイル | ファイルメニューの親 |
+| `exportToolStripMenuItem` | 登録内容を書き出す | エクスポート |
+| `importToolStripMenuItem` | 登録内容を読み込む | インポート |
+| `exitToolStripMenuItem` | 終了 | アプリ終了 |
+
+## 13.2 登録
+
+| `Name` | 日本語表示例 | 機能 |
+|---|---|---|
+| `registerToolStripMenuItem` | 登録 | 登録メニューの親 |
+| `addGroupToolStripMenuItem` | グループ追加 | グループ追加 |
+| `addFileToolStripMenuItem` | ファイル追加 | ファイル追加 |
+| `addFolderToolStripMenuItem` | フォルダー追加 | フォルダー追加 |
+| `addUrlToolStripMenuItem` | URL追加 | URL追加 |
+| `addTemplateToolStripMenuItem` | テンプレート追加 | テンプレート追加 |
+
+## 13.3 編集
+
+| `Name` | 日本語表示例 | 機能 |
+|---|---|---|
+| `editToolStripMenuItem` | 編集 | 編集メニューの親 |
+| `openSelectedToolStripMenuItem` | 開く | 選択項目を開く |
+| `copySelectedToolStripMenuItem` | コピー | 選択項目をコピー |
+| `editSelectedToolStripMenuItem` | 編集 | 選択項目を編集 |
+| `detailSelectedToolStripMenuItem` | 詳細 | 詳細表示 |
+| `deleteSelectedToolStripMenuItem` | 登録をごみ箱へ | 登録情報を移動 |
+| `undoToolStripMenuItem` | 元に戻す | 直前操作を戻す |
+| `moveUpToolStripMenuItem` | 上へ移動 | 上へ移動 |
+| `moveDownToolStripMenuItem` | 下へ移動 | 下へ移動 |
+| `sortSelectedToolStripMenuItem` | 選択範囲を並び替え | 選択範囲ソート |
+| `saveManualOrderToolStripMenuItem` | 並び順を保存 | 並び順確定 |
+| `revertUnsavedOrderToolStripMenuItem` | 保存前に戻す | 未保存変更破棄 |
+
+## 13.4 表示
+
+| `Name` | 日本語表示例 | 機能 |
+|---|---|---|
+| `viewToolStripMenuItem` | 表示 | 表示メニューの親 |
+| `showBeginnerHintsToolStripMenuItem` | 使い方のヒント | ヒント表示切替 |
+| `showIconMeaningToolStripMenuItem` | アイコンの意味 | アイコン説明切替 |
+| `actionButtonDisplayModeToolStripMenuItem` | 操作ボタン表示 | 表示モードの親 |
+| `beginnerActionButtonsToolStripMenuItem` | 初心者向け文字表示 | 文字ボタン表示 |
+| `compactIconButtonsToolStripMenuItem` | コンパクトアイコン表示 | アイコン表示 |
+| `showThumbnailsToolStripMenuItem` | サムネイル表示 | サムネイル切替 |
+| `sortModeToolStripMenuItem` | 並び方 | 並び方の親 |
+| `manualOrderToolStripMenuItem` | 手動並び順 | 手動順表示 |
+| `sortByNameToolStripMenuItem` | 名前順 | 名前順表示 |
+| `sortByTypeToolStripMenuItem` | 種類順 | 種類順表示 |
+| `sortByCreatedAtToolStripMenuItem` | 追加順 | 追加順表示 |
+| `sortByUpdatedAtToolStripMenuItem` | 更新順 | 更新順表示 |
+
+## 13.5 ツール・ヘルプ
+
+| `Name` | 日本語表示例 | 機能 |
+|---|---|---|
+| `toolsToolStripMenuItem` | ツール | ツールメニューの親 |
+| `settingsToolStripMenuItem` | 設定 | 設定画面を開く |
+| `trashToolStripMenuItem` | 登録のごみ箱 | ごみ箱画面を開く |
+| `backupToolStripMenuItem` | バックアップ | バックアップ画面を開く |
+| `repairShortcutsToolStripMenuItem` | ショートカット修復 | リンク先修復 |
+| `helpToolStripMenuItem` | ヘルプ | ヘルプメニューの親 |
+| `usageGuideToolStripMenuItem` | 使い方 | ガイドを開く |
+| `aboutToolStripMenuItem` | バージョン情報 | About画面を開く |
+
+---
+
+# 14. DataGridView列契約
+
+| 日本語の列 | `Name` | 種類の目安 | 機能 |
+|---|---|---|---|
+| 種類アイコン | `itemIconColumn` | `DataGridViewImageColumn` | 猫アイコンを表示する |
+| 種類 | `itemTypeColumn` | `DataGridViewTextBoxColumn` | フォルダー、画像、URLなどを表示する |
+| タイトル | `itemTitleColumn` | `DataGridViewTextBoxColumn` | 登録名を表示する |
+| 内容・参照先 | `itemReferenceColumn` | `DataGridViewTextBoxColumn` | パス、URL、テンプレート概要を表示する |
+| 状態 | `itemStatusColumn` | `DataGridViewTextBoxColumn` | 存在しないファイル等を表示する |
+| サムネイル | `itemThumbnailColumn` | `DataGridViewImageColumn` | 画像・動画のプレビューを表示する |
 
 列の順序、幅、表示・非表示は少佐が調整できます。
 
 ---
 
-# 10. 右クリックメニュー契約
+# 15. 右クリックメニュー契約
 
-| Name | 用途 |
-|---|---|
-| `itemContextMenuStrip` | 項目右クリックメニュー |
-| `openToolStripMenuItem` | 開く |
-| `copyToolStripMenuItem` | コピー |
-| `editToolStripMenuItem` | 編集 |
-| `detailToolStripMenuItem` | 詳細 |
-| `deleteToolStripMenuItem` | 登録をごみ箱へ |
-| `openContainingFolderToolStripMenuItem` | 置いてあるフォルダーを開く |
-| `copyTitleToolStripMenuItem` | タイトルをコピー |
+| `Name` | 日本語表示例 | 機能 |
+|---|---|---|
+| `itemContextMenuStrip` | 項目右クリックメニュー | メニュー本体 |
+| `openToolStripMenuItem` | 開く | 開く |
+| `copyToolStripMenuItem` | コピー | コピー |
+| `editToolStripMenuItem` | 編集 | 編集 |
+| `detailToolStripMenuItem` | 詳細 | 詳細表示 |
+| `deleteToolStripMenuItem` | 登録をごみ箱へ | 登録情報を移動 |
+| `openContainingFolderToolStripMenuItem` | 置いてあるフォルダーを開く | 親フォルダーを開く |
+| `copyTitleToolStripMenuItem` | タイトルをコピー | タイトルコピー |
 
 右クリックして動かさず離した場合はメニュー、右ボタンでドラッグした場合は並び替えとして扱います。
 
 ---
 
-# 11. ToolTipとアクセシビリティ
+# 16. ToolTipとアクセシビリティ
 
 アイコンだけの操作には、次を設定します。
 
@@ -400,11 +522,11 @@ AccessibleDescription: 新しいグループを作成します
 
 ---
 
-# 12. SettingsForm契約
+# 17. SettingsForm契約
 
-## 表示
+## 17.1 表示
 
-| Name | 用途 |
+| `Name` | 日本語での意味 |
 |---|---|
 | `typeDisplayModeComboBox` | 種類表示方法 |
 | `settingsShowBeginnerHintsCheckBox` | ヒント表示 |
@@ -414,9 +536,9 @@ AccessibleDescription: 新しいグループを作成します
 | `showThumbnailsCheckBox` | サムネイル表示を使う |
 | `thumbnailSizeComboBox` | サムネイルサイズ |
 
-## D&D・並び順
+## 17.2 D&D・並び順
 
-| Name | 用途 |
+| `Name` | 日本語での意味 |
 |---|---|
 | `confirmTitleOnDropAddCheckBox` | D&D追加時タイトル確認 |
 | `enableGroupDropModifierShortcutsCheckBox` | Ctrl / Shiftショートカット |
@@ -426,9 +548,9 @@ AccessibleDescription: 新しいグループを作成します
 | `defaultItemSortModeComboBox` | 既定の並び方 |
 | `unsavedOrderBehaviorComboBox` | 毎回確認 / 自動保存 / 自動破棄 |
 
-## バックアップ・削除
+## 17.3 バックアップ・削除
 
-| Name | 用途 |
+| `Name` | 日本語での意味 |
 |---|---|
 | `autoBackupEnabledCheckBox` | 自動バックアップ |
 | `maxBackupCountNumericUpDown` | バックアップ保持数 |
@@ -440,9 +562,9 @@ AccessibleDescription: 新しいグループを作成します
 | `trashRetentionExplanationLabel` | 元ファイルは削除しない説明 |
 | `emptyTrashButton` | ごみ箱内の登録情報をすべて削除 |
 
-## 常駐・起動
+## 17.4 常駐・起動
 
-| Name | 用途 |
+| `Name` | 日本語での意味 |
 |---|---|
 | `minimizeToTrayOnCloseCheckBox` | 閉じるボタンでタスクトレイへ |
 | `autoStartWithWindowsCheckBox` | Windows起動時に自動起動 |
@@ -453,16 +575,16 @@ AccessibleDescription: 新しいグループを作成します
 
 ---
 
-# 13. RecycleBinForm契約
+# 18. RecycleBinForm契約
 
-| Name | 用途 |
-|---|---|
-| `trashMeaningNoticeLabel` | 元ファイルは削除しない説明 |
-| `trashGridView` | 登録のごみ箱一覧 |
-| `restoreRegistrationButton` | 登録を元に戻す |
-| `removeRegistrationFromTrashButton` | ごみ箱から登録を削除 |
-| `emptyRegistrationTrashButton` | 登録情報をすべて削除 |
-| `closeButton` | 閉じる |
+| 画面上の意味 | `Name` | 機能 |
+|---|---|---|
+| 元ファイルは削除しない説明 | `trashMeaningNoticeLabel` | 注意書きを常時表示する |
+| 登録のごみ箱一覧 | `trashGridView` | 削除済み登録を一覧表示する |
+| 登録を元に戻す | `restoreRegistrationButton` | 元グループへ復元する |
+| ごみ箱から登録を削除 | `removeRegistrationFromTrashButton` | 登録情報だけを削除する |
+| 登録情報をすべて削除 | `emptyRegistrationTrashButton` | ごみ箱を空にする |
+| 閉じる | `closeButton` | 画面を閉じる |
 
 `trashGridView` に欲しい列：
 
@@ -477,9 +599,9 @@ AccessibleDescription: 新しいグループを作成します
 
 ---
 
-# 14. サムネイル契約
+# 19. サムネイル契約
 
-| Name | 用途 |
+| `Name` | 日本語での意味 |
 |---|---|
 | `itemVisualModeComboBox` | 表示モード切替 |
 | `showThumbnailsToolStripMenuItem` | MenuStripから切替 |
@@ -495,19 +617,20 @@ AccessibleDescription: 新しいグループを作成します
 
 ---
 
-# 15. 少佐がDesignerで配置するときの確認
+# 20. 少佐がDesignerで配置するときの確認
 
-1. 見た目と場所を決める
-2. 文字ボタンへ `<action>Button` のNameを付ける
-3. アイコンボタンへ `<action>IconButton` のNameを付ける
-4. MenuStrip項目へ契約名を付ける
-5. アイコンだけの操作へToolTipとAccessibleNameを付ける
-6. 未実装機能はDisabledにしておく
-7. イベント処理はまだ書かない
+1. `UI_SCREEN_MAP.md` で置きたい領域を確認する
+2. 見た目と場所を決める
+3. 文字ボタンへ `<action>Button` のNameを付ける
+4. アイコンボタンへ `<action>IconButton` のNameを付ける
+5. MenuStrip項目へ契約名を付ける
+6. アイコンだけの操作へToolTipとAccessibleNameを付ける
+7. 未実装機能はDisabledにしておく
+8. イベント処理はまだ書かない
 
 ---
 
-# 16. Codexへ機能接続を依頼するときの文面
+# 21. Codexへ機能接続を依頼するときの文面
 
 ```text
 Designerで配置済みのUIを作り直さず、docs/UI_CONTROL_CONTRACT.md のNameに接続してください。
