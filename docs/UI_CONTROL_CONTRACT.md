@@ -471,7 +471,6 @@ public enum UnsavedOrderBehavior
 ---
 
 # ショートカット機能の実装方針
-# ショートカット機能の実装方針
 
 スタートメニュー登録とWindows起動時自動起動は、UIから直接ファイル操作せず、Serviceへ分離します。
 
